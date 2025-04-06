@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>QMGスコア入力</title>
+  <style>
+    :root {
+      --primary: #fdecea;
+      --highlight: #f9cfcf;
+      --bg: #ffffff;
+      --border: #ddd;
+      --header-bg: #fafafa;
+      --border-accent: #f5b5b5;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background-color: var(--bg);
+      padding: 0.8em;
+      color: #333;
+      margin: 0;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 0.8em;
+    }
+
+    .select-container {
+      margin: 1em auto;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    select {
+      font-size: 1.1em;
+      padding: 0.8em;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 1em;
+      width: 100%;
+      -webkit-appearance: none;
+      background-color: #fff;
+      background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 30px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 1em;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 100%;
+      background-color: var(--bg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      border-radius: 0.5em;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 0.9em 0.5em;
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: background-color 0.2s ease;
+      font-size: 0.95em;
+      word-wrap: break-word;
+    }
+
+    th {
+      background-color: var(--header-bg);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    td.selectable {
+      min-height: 44px; /* Apple's minimum tap target size */
+    }
+
+    td.selectable:not(.selected):active {
+      background-color: var(--highlight);
+    }
+
+    td.selected {
+      background-color: var(--primary);
+      font-weight: 500;
+      border: 2px solid var(--border-accent);
+      position: relative;
+    }
+
+    td.selected::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--border-accent);
+    }
+
+    td.label-cell {
+      background-color: #f5f5f5;
+      font-weight: 600;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+    }
+
+    #total {
+      text-align: center;
+      font-size: 1.5em;
+      margin: 1.2em 0;
+      font-weight: bold;
+      color: #444;
+      padding: 0.8em;
+      background-color: #f8f8f8;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    #result-container {
+      margin: 1em auto;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    #result-text {
+      width: 100%;
+      height: 200px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-family: monospace;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      background-color: #f5b5b5;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 480px) {
+      th, td {
+        padding: 0.8em 0.4em;
+        font-size: 0.9em;
+      }
+      
+      table {
+        width: 100%;
+      }
+      
+      col:first-child {
+        width: 30%;
+      }
+      
+      col:not(:first-child) {
+        width: 17.5%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h2>QMG</h2>
+
+<div class="select-container">
+  <select id="sex">
+    <option value="男性">男性</option>
+    <option value="女性">女性</option>
+  </select>
+</div>
+
+<div class="table-container">
+  <div id="qmg-table"></div>
+</div>
+
+<div id="total">合計点: 0</div>
+
+<div id="result-container">
+  <h3>結果（コピー用）</h3>
+  <textarea id="result-text" readonly></textarea>
+  <div style="text-align: center;">
+    <button id="copy-btn" class="btn">コピー</button>
+    <button id="clear-btn" class="btn">全て0点にする</button>
+  </div>
+</div>
+
+<script>
+  var gripLabels = {
+    "男性": {
+      "握力（利き手）": ["≥45kg", "15〜44kg", "5〜14kg", "0〜4kg"],
+      "握力（反対手）": ["≥35kg", "15〜34kg", "5〜14kg", "0〜4kg"]
+    },
+    "女性": {
+      "握力（利き手）": ["≥30kg", "10〜29kg", "5〜9kg", "0〜4kg"],
+      "握力（反対手）": ["≥25kg", "10〜24kg", "5〜9kg", "0〜4kg"]
+    }
+  };
+
+  var baseItems = {
+    "複視出現時間": ["61秒以上", "11〜60秒", "1〜10秒", "常時"],
+    "眼瞼下垂出現時間": ["61秒以上", "11〜60秒", "1〜10秒", "常時"],
+    "顔面筋力（閉眼）": ["正常に閉眼できる", "少し弱い", "結膜露出", "閉じられない"],
+    "100cc水の飲み込み": ["正常", "軽度誤嚥", "強い誤嚥", "飲めない"],
+    "構音（数唱）": ["50まで言える", "30〜49", "10〜29", "1〜9"],
+    "右上肢90°挙上": ["240秒", "90〜239秒", "10〜89秒", "0〜9秒"],
+    "左上肢90°挙上": ["240秒", "90〜239秒", "10〜89秒", "0〜9秒"],
+    "%FVC": ["≧80%", "65〜79%", "50〜64%", "<50%"],
+    "頭部挙上": ["120秒", "30〜119秒", "1〜29秒", "0秒"],
+    "右下肢45°挙上": ["100秒", "31〜99秒", "1〜30秒", "0秒"],
+    "左下肢45°挙上": ["100秒", "31〜99秒", "1〜30秒", "0秒"]
+  };
+
+  var scores = {};
+
+  function renderTable() {
+    var sex = document.getElementById("sex").value;
+    var grip = gripLabels[sex] || {};
+    var allItems = {};
+
+    for (var key in baseItems) {
+      if (baseItems.hasOwnProperty(key)) {
+        allItems[key] = baseItems[key];
+      }
+    }
+    for (var key in grip) {
+      if (grip.hasOwnProperty(key)) {
+        allItems[key] = grip[key];
+      }
+    }
+
+    var table = document.createElement("table");
+    
+    // Add column group for better width control
+    var colgroup = document.createElement("colgroup");
+    colgroup.appendChild(document.createElement("col")); // Label column
+    for (var c = 0; c < 4; c++) {
+      colgroup.appendChild(document.createElement("col")); // Score columns
+    }
+    table.appendChild(colgroup);
+
+    var header = table.insertRow();
+    var th0 = document.createElement("th");
+    th0.innerHTML = "項目";
+    header.appendChild(th0);
+    for (var i = 0; i < 4; i++) {
+      var th = document.createElement("th");
+      th.textContent = i + "点";
+      header.appendChild(th);
+    }
+
+    for (var item in allItems) {
+      if (!allItems.hasOwnProperty(item)) continue;
+      var labels = allItems[item];
+      if (!labels || !labels.length) continue;
+
+      var row = table.insertRow();
+      var labelCell = row.insertCell();
+      labelCell.textContent = item;
+      labelCell.className = "label-cell";
+
+      for (var j = 0; j < labels.length; j++) {
+        var cell = row.insertCell();
+        cell.textContent = labels[j];
+        cell.className = "selectable";
+        if (scores[item] === j) cell.classList.add("selected");
+
+        (function(itemCopy, idxCopy, cellRef) {
+          // タッチイベントの修正
+          cellRef.addEventListener('touchstart', function(e) {
+            cellRef.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+          }, false);
+          
+          cellRef.addEventListener('touchend', function(e) {
+            cellRef.style.backgroundColor = '';
+            scores[itemCopy] = idxCopy;
+            updateTotal();
+            updateResultText();
+            renderTable();
+          }, false);
+          
+          // クリックイベント（非タッチデバイス用）
+          cellRef.addEventListener('click', function(e) {
+            scores[itemCopy] = idxCopy;
+            updateTotal();
+            updateResultText();
+            renderTable();
+          }, false);
+        })(item, j, cell);
+      }
+    }
+
+    var container = document.getElementById("qmg-table");
+    container.innerHTML = "";
+    container.appendChild(table);
+  }
+
+  function updateTotal() {
+    var total = 0;
+    for (var key in scores) {
+      if (scores.hasOwnProperty(key)) {
+        total += scores[key];
+      }
+    }
+    document.getElementById("total").textContent = "合計点: " + total;
+    return total;
+  }
+
+  function updateResultText() {
+    var sex = document.getElementById("sex").value;
+    var total = updateTotal();
+    var resultText = "QMGスコア結果（" + sex + "）\n";
+    resultText += "日付: " + new Date().toLocaleDateString('ja-JP') + "\n";
+    resultText += "------------------------\n";
+    
+    var allItems = Object.assign({}, baseItems);
+    var grip = gripLabels[sex] || {};
+    for (var key in grip) {
+      if (grip.hasOwnProperty(key)) {
+        allItems[key] = grip[key];
+      }
+    }
+    
+    for (var item in allItems) {
+      if (allItems.hasOwnProperty(item) && scores.hasOwnProperty(item)) {
+        var scoreVal = scores[item];
+        var valueText = allItems[item][scoreVal] || "未選択";
+        resultText += item + ": " + scoreVal + "点 (" + valueText + ")\n";
+      }
+    }
+    
+    resultText += "------------------------\n";
+    resultText += "合計点: " + total + "/39点\n";
+    
+    document.getElementById("result-text").value = resultText;
+  }
+
+  // コピーボタンの処理
+  document.getElementById("copy-btn").addEventListener("click", function() {
+    var resultText = document.getElementById("result-text");
+    resultText.select();
+    document.execCommand("copy");
+    alert("結果をクリップボードにコピーしました");
+  });
+  
+  // クリアボタンの処理（全て0点にする）
+  document.getElementById("clear-btn").addEventListener("click", function() {
+    if (confirm("すべての点数を0にしますか？")) {
+      var allItems = Object.assign({}, baseItems);
+      var sex = document.getElementById("sex").value;
+      var grip = gripLabels[sex] || {};
+      
+      for (var key in grip) {
+        if (grip.hasOwnProperty(key)) {
+          allItems[key] = grip[key];
+        }
+      }
+      
+      for (var item in allItems) {
+        if (allItems.hasOwnProperty(item)) {
+          scores[item] = 0; // すべての項目を0点に設定
+        }
+      }
+      
+      renderTable();
+      updateTotal();
+      updateResultText();
+    }
+  });
+
+  document.getElementById("sex").addEventListener("change", function () {
+    renderTable();
+    updateResultText();
+  });
+
+  // ダブルタップによるズームを防止
+  document.addEventListener('dblclick', function(e) {
+    e.preventDefault();
+  });
+
+  // 初期レンダリング
+  renderTable();
+  updateResultText();
+</script>
+
+</body>
+</html>

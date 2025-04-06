@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>MG Composite Scale入力</title>
+  <style>
+    :root {
+      --primary: #e7f8ef;
+      --highlight: #c0ebd9;
+      --bg: #ffffff;
+      --border: #ddd;
+      --header-bg: #fafafa;
+      --border-accent: #6fcba5;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background-color: var(--bg);
+      padding: 0.8em;
+      color: #333;
+      margin: 0;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 0.8em;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 1em;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 100%;
+      background-color: var(--bg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      border-radius: 0.5em;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 0.9em 0.5em;
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: background-color 0.2s ease;
+      font-size: 0.95em;
+      word-wrap: break-word;
+    }
+
+    th {
+      background-color: var(--header-bg);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    td.selectable {
+      min-height: 44px;
+      cursor: pointer;
+    }
+
+    td.selectable:not(.selected):active {
+      background-color: var(--highlight);
+    }
+
+    td.selected {
+      background-color: var(--primary);
+      font-weight: 500;
+      border: 2px solid var(--border-accent);
+      position: relative;
+    }
+
+    td.selected::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--border-accent);
+    }
+
+    td.label-cell {
+      background-color: #f5f5f5;
+      font-weight: 600;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      text-align: left;
+      padding-left: 10px;
+    }
+
+    .description {
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    #total {
+      text-align: center;
+      font-size: 1.5em;
+      margin: 1.2em 0;
+      font-weight: bold;
+      color: #444;
+      padding: 0.8em;
+      background-color: #f8f8f8;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    #result-container {
+      margin: 1em auto;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    #result-text {
+      width: 100%;
+      height: 250px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-family: monospace;
+      margin-bottom: 10px;
+    }
+
+    .btn-container {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    .btn {
+      background-color: #6fcba5;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 480px) {
+      th, td {
+        padding: 0.8em 0.4em;
+        font-size: 0.9em;
+      }
+      
+      .description {
+        font-size: 0.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h2>MG Composite Scale</h2>
+
+<div class="table-container">
+  <div id="mgc-table"></div>
+</div>
+
+<div id="total">合計点: 0/50点</div>
+
+<div id="result-container">
+  <h3>結果（コピー用）</h3>
+  <textarea id="result-text" readonly></textarea>
+  <div class="btn-container">
+    <button id="copy-btn" class="btn">コピー</button>
+    <button id="clear-btn" class="btn">全て0点にする</button>
+  </div>
+</div>
+
+<script>
+  const mgcItems = [
+    {
+      name: "上方視時の眼瞼下垂出現までの時間",
+      description: "（医師の診察）",
+      options: [
+        { text: ">45秒", score: 0 },
+        { text: "11〜45秒", score: 1 },
+        { text: "1〜10秒", score: 2 },
+        { text: "常時", score: 3 }
+      ]
+    },
+    {
+      name: "側方視時の複視出現までの時間",
+      description: "（医師の診察）",
+      options: [
+        { text: ">45秒", score: 0 },
+        { text: "11〜45秒", score: 1 },
+        { text: "1〜10秒", score: 3 },
+        { text: "常時", score: 4 }
+      ]
+    },
+    {
+      name: "閉眼の筋力",
+      description: "（医師の診察）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "軽度低下（閉眼維持可能）", score: 0 },
+        { text: "中等度低下（閉眼維持困難）", score: 1 },
+        { text: "重度低下（閉眼不能）", score: 2 }
+      ]
+    },
+    {
+      name: "会話、発音",
+      description: "（MGADL）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "時に不明瞭または鼻声", score: 2 },
+        { text: "常に不明瞭または鼻声だが理解可能", score: 4 },
+        { text: "不明瞭で理解が困難", score: 6 }
+      ]
+    },
+    {
+      name: "咬む動作",
+      description: "（MGADL）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "固い食物で疲労", score: 2 },
+        { text: "柔らかい食物でも疲労", score: 4 },
+        { text: "栄養チューブ使用", score: 6 }
+      ]
+    },
+    {
+      name: "飲み込み動作",
+      description: "（MGADL）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "まれにむせる", score: 2 },
+        { text: "頻回のむせのため食事に工夫を要す", score: 5 },
+        { text: "栄養チューブ使用", score: 6 }
+      ]
+    },
+    {
+      name: "MGによる呼吸状態",
+      description: "(MGADL)",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "活動時息切れ", score: 2 },
+        { text: "安静時息切れ", score: 4 },
+        { text: "呼吸補助装置使用", score: 9 }
+      ]
+    },
+    {
+      name: "頸の前屈／背屈筋力",
+      description: "（弱い方を選択、医師の診察）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "軽度低下", score: 1 },
+        { text: "中等度低下（おおよそ半減）", score: 3 },
+        { text: "重度低下", score: 4 }
+      ]
+    },
+    {
+      name: "上肢の挙上筋力",
+      description: "（医師の診察）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "軽度低下", score: 2 },
+        { text: "中等度低下（おおよそ半減）", score: 4 },
+        { text: "重度低下", score: 5 }
+      ]
+    },
+    {
+      name: "下肢の挙上筋力",
+      description: "（医師の診察）",
+      options: [
+        { text: "正常", score: 0 },
+        { text: "軽度低下", score: 2 },
+        { text: "中等度低下（おおよそ半減）", score: 4 },
+        { text: "重度低下", score: 5 }
+      ]
+    }
+  ];
+
+  var scores = {};
+
+  function renderTable() {
+    var table = document.createElement("table");
+    
+    // ヘッダー行
+    var header = table.insertRow();
+    var th0 = document.createElement("th");
+    th0.innerHTML = "検査項目";
+    header.appendChild(th0);
+    
+    var th1 = document.createElement("th");
+    th1.innerHTML = "";
+    th1.colSpan = 4;
+    header.appendChild(th1);
+
+    // 各項目の行
+    mgcItems.forEach((item, index) => {
+      var row = table.insertRow();
+      
+      // 項目名とその説明
+      var labelCell = row.insertCell();
+      labelCell.className = "label-cell";
+      labelCell.innerHTML = item.name + '<br><span class="description">' + item.description + '</span>';
+      
+      // 選択肢
+      item.options.forEach((option, optIndex) => {
+        var cell = row.insertCell();
+        cell.className = "selectable";
+        cell.innerHTML = option.text + '<br><span class="description">' + option.score + '点</span>';
+        
+        if (scores[item.name] === optIndex) {
+          cell.classList.add("selected");
+        }
+        
+        cell.addEventListener('click', function() {
+          scores[item.name] = optIndex;
+          renderTable();
+          updateTotal();
+          updateResultText();
+        });
+        
+        // タッチ対応
+        cell.addEventListener('touchstart', function(e) {
+          cell.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+        }, false);
+        
+        cell.addEventListener('touchend', function(e) {
+          cell.style.backgroundColor = '';
+          scores[item.name] = optIndex;
+          renderTable();
+          updateTotal();
+          updateResultText();
+        }, false);
+      });
+    });
+
+    var container = document.getElementById("mgc-table");
+    container.innerHTML = "";
+    container.appendChild(table);
+  }
+
+  function updateTotal() {
+    var total = 0;
+    
+    for (var itemName in scores) {
+      if (scores.hasOwnProperty(itemName)) {
+        const itemIndex = mgcItems.findIndex(item => item.name === itemName);
+        if (itemIndex !== -1) {
+          const scoreValue = mgcItems[itemIndex].options[scores[itemName]].score;
+          total += scoreValue;
+        }
+      }
+    }
+    
+    document.getElementById("total").textContent = "合計点: " + total + "/50点";
+    return total;
+  }
+
+  function updateResultText() {
+    var total = updateTotal();
+    var resultText = "MG Composite Scale結果\n";
+    resultText += "日付: " + new Date().toLocaleDateString('ja-JP') + "\n";
+    resultText += "------------------------\n";
+    
+    mgcItems.forEach((item) => {
+      const scoreIndex = scores[item.name] !== undefined ? scores[item.name] : 0;
+      const scoreValue = item.options[scoreIndex].score;
+      const optionText = item.options[scoreIndex].text;
+      
+      resultText += item.name + "\n";
+      resultText += "  " + scoreValue + "点: " + optionText + "\n";
+    });
+    
+    resultText += "------------------------\n";
+    resultText += "合計点: " + total + "/50点\n";
+    
+    document.getElementById("result-text").value = resultText;
+  }
+
+  // コピーボタンの処理
+  document.getElementById("copy-btn").addEventListener("click", function() {
+    var resultText = document.getElementById("result-text");
+    resultText.select();
+    document.execCommand("copy");
+    alert("結果をクリップボードにコピーしました");
+  });
+  
+  // クリアボタンの処理（全て0点にする）
+  document.getElementById("clear-btn").addEventListener("click", function() {
+    if (confirm("すべての点数を0にしますか？")) {
+      mgcItems.forEach((item) => {
+        scores[item.name] = 0; // すべての項目を0点に設定（最初の選択肢）
+      });
+      
+      renderTable();
+      updateTotal();
+      updateResultText();
+    }
+  });
+
+  // ダブルタップによるズームを防止
+  document.addEventListener('dblclick', function(e) {
+    e.preventDefault();
+  });
+
+  // 初期レンダリング
+  renderTable();
+  updateResultText();
+</script>
+
+</body>
+</html>
