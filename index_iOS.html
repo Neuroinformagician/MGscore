@@ -389,7 +389,7 @@
     <div class="buttons">
       <button class="copy-button" data-target="mgc-result">結果をコピー</button>
       <button class="reset-button" data-type="mgc">リセット</button>
-      <button id="to-summary" class="to-summary-button" onclick="window.scrollTo(0, 0); setTimeout(function() { MgApp.showTab('summary'); }, 50);">スコア表示</button>
+      <button onclick="MgApp.showTab('summary'); setTimeout(function() { window.scrollTo(0, 0); }, 50);" class="to-summary-button">スコアを表示する</button>
     </div>
 
     <h2>結果（コピー用）</h2>
