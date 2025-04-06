@@ -556,25 +556,24 @@
         
         // タブ間移動ボタン
         document.getElementById('to-mgc').addEventListener('click', () => {
-          this.showTab('mgc');
-          this.mapAdlToMgc();
-          // 画面上部にスクロール
           window.scrollTo({
             top: 0,
             behavior: 'smooth'
           });
+          setTimeout(() => {
+            this.showTab('mgc');
+            this.mapAdlToMgc();
+          }, 100);
         });
         
-        document.getElementById('to-summary').addEventListener('click', () => {
-          this.showTab('summary');
-          
-          // すぐにスクロールを実行
+        document.getElementById('to-summary').addEventListener('click', function() {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
           setTimeout(() => {
-            window.scrollTo({
-              top: 0,
-              behavior: 'smooth'
-            });
-          }, 10);
+            MgApp.showTab('summary');
+          }, 100);
         });
       },
       
