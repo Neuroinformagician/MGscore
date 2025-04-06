@@ -100,32 +100,49 @@
       width: 100%;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-    }
-    
-    /* テーブルヘッダー固定 */
-    .fixed-header {
-      position: sticky;
-      top: 0;
-      background-color: #f2f2f7;
-      z-index: 10;
-    }
-    
-    /* 項目ラベル固定 */
-    .fixed-item {
-      position: sticky;
-      left: 0;
-      background-color: white;
-      z-index: 5;
-      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
     
     table {
       width: 100%;
       min-width: 500px; /* 最小幅を設定して横スクロールを保証 */
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       margin-bottom: 20px;
       border-radius: 10px;
       overflow: hidden;
+    }
+    
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #e5e5ea;
+      font-size: 0.9rem;
+    }
+    
+    th {
+      background-color: #f2f2f7;
+      font-weight: 600;
+      color: #6c6c70;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .item-label {
+      font-weight: 600;
+      text-align: left;
+      color: #1c1c1e;
+      min-width: 120px;
+      position: sticky;
+      left: 0;
+      background-color: white;
+      z-index: 5;
+      border-right: 1px solid #e5e5ea;
     }
     
     th, td {
@@ -591,16 +608,10 @@
         // ADLテーブル
         const adlTable = document.getElementById('adl-table');
         
-        // ヘッダー行を固定
-        const headerRow = adlTable.querySelector('tr');
-        if (headerRow) {
-          headerRow.classList.add('fixed-header');
-        }
-        
         this.adl.items.forEach((item, rowIndex) => {
           const row = document.createElement('tr');
           const itemCell = document.createElement('td');
-          itemCell.className = 'item-label fixed-item';
+          itemCell.className = 'item-label';
           itemCell.textContent = item.name;
           row.appendChild(itemCell);
           
@@ -620,16 +631,10 @@
         // MGCテーブル
         const mgcTable = document.getElementById('mgc-table');
         
-        // ヘッダー行を固定
-        const mgcHeaderRow = mgcTable.querySelector('tr');
-        if (mgcHeaderRow) {
-          mgcHeaderRow.classList.add('fixed-header');
-        }
-        
         this.mgc.items.forEach((item, rowIndex) => {
           const row = document.createElement('tr');
           const itemCell = document.createElement('td');
-          itemCell.className = 'item-label fixed-item';
+          itemCell.className = 'item-label';
           itemCell.innerHTML = `${item.name}<br><span class="description">${item.description}</span>`;
           row.appendChild(itemCell);
           
