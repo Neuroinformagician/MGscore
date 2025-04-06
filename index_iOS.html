@@ -567,11 +567,14 @@
         
         document.getElementById('to-summary').addEventListener('click', () => {
           this.showTab('summary');
-          // 画面上部にスクロール
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
+          
+          // すぐにスクロールを実行
+          setTimeout(() => {
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }, 10);
         });
       },
       
