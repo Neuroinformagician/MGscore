@@ -179,6 +179,18 @@
       border-radius: 10px;
     }
     
+    /* ADL合計点数固定表示 */
+    .fixed-total {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      margin: 0;
+      border-top: 1px solid #e5e5ea;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
     .result {
       width: 100%;
       height: 200px;
@@ -343,7 +355,7 @@
       </table>
     </div>
 
-    <div id="adl-total" class="total">合計点: 0/24点</div>
+    <div id="adl-total" class="total fixed-total">合計点: 0/24点</div>
 
     <div class="buttons">
       <button class="copy-button" data-target="adl-result">結果をコピー</button>
@@ -618,6 +630,12 @@
         if (tabId === 'summary') {
           this.updateSummary();
         }
+        
+        // 画面上部にスクロール
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
       },
       
       // 選択処理
