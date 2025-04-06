@@ -389,7 +389,7 @@
     <div class="buttons">
       <button class="copy-button" data-target="mgc-result">結果をコピー</button>
       <button class="reset-button" data-type="mgc">リセット</button>
-      <button id="to-summary" class="to-summary-button">スコア表示</button>
+      <button id="to-summary" class="to-summary-button" onclick="window.scrollTo(0, 0); setTimeout(function() { MgApp.showTab('summary'); }, 50);">スコア表示</button>
     </div>
 
     <h2>結果（コピー用）</h2>
@@ -554,7 +554,7 @@
           });
         });
         
-        // タブ間移動ボタン
+        // タブ間移動ボタン - MGCに進む
         document.getElementById('to-mgc').addEventListener('click', () => {
           window.scrollTo({
             top: 0,
@@ -563,18 +563,10 @@
           setTimeout(() => {
             this.showTab('mgc');
             this.mapAdlToMgc();
-          }, 100);
+          }, 50);
         });
         
-        document.getElementById('to-summary').addEventListener('click', function() {
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-          setTimeout(() => {
-            MgApp.showTab('summary');
-          }, 100);
-        });
+        // スコア表示ボタンはHTMLに直接onclick属性で追加
       },
       
       // テーブルの描画
