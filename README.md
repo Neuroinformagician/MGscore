@@ -1,0 +1,2 @@
+# MGscore
+MG clinical scores
