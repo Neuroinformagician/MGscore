@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MG評価スケール</title>
+  <style>
+    /* 共通スタイル - iOS風 */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 10px;
+      background-color: #f2f2f7;
+      color: #1c1c1e;
+      line-height: 1.4;
+    }
+    
+    h1, h2 {
+      text-align: center;
+      color: #1c1c1e;
+      font-weight: 600;
+      font-size: 1.5rem;
+      margin: 15px 0;
+    }
+    
+    h2 {
+      font-size: 1.2rem;
+    }
+    
+    /* ナビゲーション - iOS風タブ */
+    .nav {
+      display: flex;
+      margin-bottom: 20px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .nav-item {
+      flex: 1;
+      padding: 12px 0;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      color: #8e8e93;
+    }
+    
+    .nav-item.active {
+      font-weight: 600;
+    }
+    
+    /* タブカラー */
+    .nav-item[data-tab="adl"] {
+      border-bottom: 3px solid transparent;
+    }
+    
+    .nav-item[data-tab="adl"].active {
+      color: #007aff;
+      border-bottom: 3px solid #007aff;
+    }
+    
+    .nav-item[data-tab="mgc"] {
+      border-bottom: 3px solid transparent;
+    }
+    
+    .nav-item[data-tab="mgc"].active {
+      color: #34c759;
+      border-bottom: 3px solid #34c759;
+    }
+    
+    .nav-item[data-tab="mgqol"] {
+      border-bottom: 3px solid transparent;
+    }
+    
+    .nav-item[data-tab="mgqol"].active {
+      color: #af52de;
+      border-bottom: 3px solid #af52de;
+    }
+    
+    .nav-item[data-tab="summary"] {
+      border-bottom: 3px solid transparent;
+    }
+    
+    .nav-item[data-tab="summary"].active {
+      color: #ff9500;
+      border-bottom: 3px solid #ff9500;
+    }
+    
+    /* タブコンテンツ */
+    .tab-content {
+      display: none;
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* タップ入力エリア追加 */
+    .tap-input-section {
+      background-color: #f9f9fb;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #e5e5ea;
+    }
+    
+    .tap-input-title {
+      font-weight: 600;
+      color: #1c1c1e;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .tap-input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    
+    .tap-item {
+      background-color: white;
+      border: 2px solid #e5e5ea;
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tap-item:active {
+      transform: scale(0.98);
+    }
+    
+    .tap-item-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+    }
+    
+    .tap-item-score {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 5px;
+      border-radius: 5px;
+      background-color: #f2f2f7;
+      margin-top: 5px;
+    }
+    
+    /* 各スケールごとのタップアイテムカラー */
+    #adl .tap-item-score {
+      color: #007aff;
+    }
+    
+    #adl .tap-item.has-score {
+      border-color: #007aff;
+      background-color: rgba(0, 122, 255, 0.05);
+    }
+    
+    #mgc .tap-item-score {
+      color: #34c759;
+    }
+    
+    #mgc .tap-item.has-score {
+      border-color: #34c759;
+      background-color: rgba(52, 199, 89, 0.05);
+    }
+    
+    #mgqol .tap-item-score {
+      color: #af52de;
+    }
+    
+    #mgqol .tap-item.has-score {
+      border-color: #af52de;
+      background-color: rgba(175, 82, 222, 0.05);
+    }
+    
+    /* タップフィードバックアニメーション */
+    @keyframes tapFeedback {
+      0% {
+        transform: scale(0);
+        opacity: 0.5;
+      }
+      50% {
+        opacity: 0.3;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+    
+    .tap-feedback {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: currentColor;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: tapFeedback 0.4s ease-out;
+    }
+    
+    /* テーブルスタイル - iOS風、横スクロール対応 */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+    
+    table {
+      width: 100%;
+      min-width: 500px; /* 最小幅を設定して横スクロールを保証 */
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #e5e5ea;
+      font-size: 0.9rem;
+    }
+    
+    th {
+      background-color: #f2f2f7;
+      font-weight: 600;
+      color: #6c6c70;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .item-label {
+      font-weight: 600;
+      text-align: left;
+      color: #1c1c1e;
+      min-width: 120px;
+      position: sticky;
+      left: 0;
+      background-color: white;
+      z-index: 5;
+      border-right: 1px solid #e5e5ea;
+    }
+    
+    .option {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      border-radius: 8px;
+      margin: 2px;
+    }
+    
+    .option:hover {
+      background-color: #f2f2f7;
+    }
+    
+    .selected {
+      font-weight: 600;
+    }
+    
+    /* 各スケールごとに選択色を分ける */
+    #adl-table .selected {
+      background-color: rgba(0, 122, 255, 0.15);
+      color: #007aff;
+    }
+    
+    #mgc-table .selected {
+      background-color: rgba(52, 199, 89, 0.15);
+      color: #34c759;
+    }
+    
+    #mgqol-table .selected {
+      background-color: rgba(175, 82, 222, 0.15);
+      color: #af52de;
+    }
+    
+    .description {
+      font-size: 0.75em;
+      color: #8e8e93;
+      display: block;
+      margin-top: 2px;
+    }
+    
+    /* 結果表示 - iOS風 */
+    .total {
+      font-size: 1.2em;
+      font-weight: 600;
+      text-align: center;
+      margin: 20px 0;
+      padding: 12px;
+      background-color: #f2f2f7;
+      border-radius: 10px;
+    }
+    
+    /* ADL合計点数固定表示 */
+    .fixed-total {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      margin: 0;
+      border-top: 1px solid #e5e5ea;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .result {
+      width: 100%;
+      height: 200px;
+      margin-top: 20px;
+      padding: 12px;
+      border: 1px solid #e5e5ea;
+      border-radius: 10px;
+      font-family: -apple-system-monospaced, monospace;
+      background-color: #f9f9fb;
+      box-sizing: border-box;
+    }
+    
+    /* ボタン - iOS風 */
+    .buttons {
+      margin: 20px 0;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      background-color: #007aff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95em;
+      transition: background-color 0.2s ease;
+      margin-bottom: 5px;
+    }
+    
+    button:hover {
+      background-color: #0062cc;
+    }
+    
+    /* iOS風のボタンカラーバリエーション */
+    .copy-button {
+      background-color: #007aff; /* iOS青 */
+    }
+    
+    .reset-button {
+      background-color: #ff3b30; /* iOS赤 */
+    }
+    
+    #to-mgc {
+      background-color: #34c759; /* iOS緑 */
+    }
+    
+    #to-mgqol {
+      background-color: #af52de; /* iOS紫 */
+    }
+    
+    .to-summary-button {
+      background-color: #ff9500; /* iOSオレンジ */
+    }
+    
+    /* 説明文 - iOS風 */
+    .note {
+      background-color: #f2f2f7;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      color: #6c6c70;
+      font-size: 0.9rem;
+    }
+    
+    .tap-instruction {
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    
+    /* スコア表示 - iOS風 */
+    .summary-scores {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .score-box {
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .score-box-adl {
+      background-color: rgba(0, 122, 255, 0.1);
+      border: 1px solid rgba(0, 122, 255, 0.2);
+    }
+    
+    .score-box-mgc {
+      background-color: rgba(52, 199, 89, 0.1);
+      border: 1px solid rgba(52, 199, 89, 0.2);
+    }
+    
+    .score-box-mgqol {
+      background-color: rgba(175, 82, 222, 0.1);
+      border: 1px solid rgba(175, 82, 222, 0.2);
+    }
+    
+    .score-value {
+      font-size: 2.5em;
+      font-weight: 700;
+      margin: 10px 0;
+      color: #1c1c1e;
+    }
+    
+    .score-box-adl .score-value {
+      color: #007aff;
+    }
+    
+    .score-box-mgc .score-value {
+      color: #34c759;
+    }
+    
+    .score-box-mgqol .score-value {
+      color: #af52de;
+    }
+    
+    /* レスポンシブ対応 */
+    @media screen and (max-width: 480px) {
+      body {
+        padding: 8px;
+      }
+      
+      h1 {
+        font-size: 1.3rem;
+      }
+      
+      h2 {
+        font-size: 1.1rem;
+      }
+      
+      .nav-item {
+        padding: 10px 0;
+        font-size: 0.85rem;
+      }
+      
+      .score-box {
+        flex: 100%;
+        margin-bottom: 10px;
+      }
+      
+      .tap-input-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>MG臨床スコア</h1>
+  
+  <div class="nav">
+    <div class="nav-item active" data-tab="adl">MG-ADL</div>
+    <div class="nav-item" data-tab="mgc">MG Composite</div>
+    <div class="nav-item" data-tab="mgqol">MGQOL-15r</div>
+    <div class="nav-item" data-tab="summary">スコア表示</div>
+  </div>
+
+  <!-- MG-ADL タブ -->
+  <div id="adl" class="tab-content active">
+    <div class="note">
+      重症筋無力症（MG）の日常生活動作（ADL）を評価するスケールです。合計点数が高いほど重症度が高いことを示します。
+    </div>
+    
+    <div class="tap-instruction">
+      📱 タップで点数入力：1回タップ→1点、2回→2点、3回→3点、4回→0点に戻る
+    </div>
+    
+    <!-- タップ入力セクション -->
+    <div class="tap-input-section">
+      <div class="tap-input-title">タップで点数を入力</div>
+      <div class="tap-input-grid" id="adl-tap-grid">
+        <!-- 動的に生成されます -->
+      </div>
+    </div>
+    
+    <!-- 従来のテーブル入力 -->
+    <details>
+      <summary style="cursor: pointer; padding: 10px; background-color: #f2f2f7; border-radius: 8px; margin-bottom: 10px;">
+        詳細表示（従来の入力方法）
+      </summary>
+      <div class="table-container">
+        <table id="adl-table">
+          <tr>
+            <th>項目</th>
+            <th>0点</th>
+            <th>1点</th>
+            <th>2点</th>
+            <th>3点</th>
+          </tr>
+          <!-- 動的に生成されます -->
+        </table>
+      </div>
+    </details>
+
+    <div id="adl-total" class="total fixed-total">合計点: 0/24点</div>
+
+    <div class="buttons">
+      <button class="copy-button" data-target="adl-result">結果をコピー</button>
+      <button class="reset-button" data-type="adl">リセット</button>
+      <button id="to-mgc">MGCに進む</button>
+    </div>
+
+    <h2>結果（コピー用）</h2>
+    <textarea id="adl-result" class="result" readonly></textarea>
+  </div>
+
+  <!-- MG Composite タブ -->
+  <div id="mgc" class="tab-content">
+    <div class="note">
+      重症筋無力症（MG）の重症度を評価する「MG Composite Scale」です。合計点数が高いほど重症度が高いことを示します。
+      MGADL評価後なら、重複する項目は反映されています。
+    </div>
+    
+    <div class="tap-instruction">
+      📱 タップで点数入力：タップ回数で各項目の点数が変わります
+    </div>
+    
+    <!-- タップ入力セクション -->
+    <div class="tap-input-section">
+      <div class="tap-input-title">タップで点数を入力</div>
+      <div class="tap-input-grid" id="mgc-tap-grid">
+        <!-- 動的に生成されます -->
+      </div>
+    </div>
+    
+    <!-- 従来のテーブル入力 -->
+    <details>
+      <summary style="cursor: pointer; padding: 10px; background-color: #f2f2f7; border-radius: 8px; margin-bottom: 10px;">
+        詳細表示（従来の入力方法）
+      </summary>
+      <div class="table-container">
+        <table id="mgc-table">
+          <tr>
+            <th>検査項目</th>
+            <th colspan="4">状態（点数）</th>
+          </tr>
+          <!-- 動的に生成されます -->
+        </table>
+      </div>
+    </details>
+
+    <div id="mgc-total" class="total">合計点: 0/50点</div>
+
+    <div class="buttons">
+      <button class="copy-button" data-target="mgc-result">結果をコピー</button>
+      <button class="reset-button" data-type="mgc">リセット</button>
+      <button id="to-mgqol">MGQOLに進む</button>
+    </div>
+
+    <h2>結果（コピー用）</h2>
+    <textarea id="mgc-result" class="result" readonly></textarea>
+  </div>
+
+  <!-- MGQOL-15 タブ -->
+  <div id="mgqol" class="tab-content">
+    <div class="note">
+      重症筋無力症（MG）患者のQOLを評価する「MGQOL-15r」です。15項目の質問に対して、0から2で回答してください。
+      合計点数が高いほどQOLが低下していることを示します。
+    </div>
+    
+    <div class="tap-instruction">
+      📱 タップで点数入力：1回タップ→1点、2回→2点、3回→0点に戻る
+    </div>
+    
+    <!-- タップ入力セクション -->
+    <div class="tap-input-section">
+      <div class="tap-input-title">タップで点数を入力</div>
+      <div class="tap-input-grid" id="mgqol-tap-grid">
+        <!-- 動的に生成されます -->
+      </div>
+    </div>
+    
+    <!-- 従来のテーブル入力 -->
+    <details>
+      <summary style="cursor: pointer; padding: 10px; background-color: #f2f2f7; border-radius: 8px; margin-bottom: 10px;">
+        詳細表示（従来の入力方法）
+      </summary>
+      <div class="table-container">
+        <table id="mgqol-table">
+          <tr>
+            <th>質問項目</th>
+            <th>0<br>全くそうは思わない</th>
+            <th>1<br>少しそう思う</th>
+            <th>2<br>強くそう思う</th>
+          </tr>
+          <!-- 動的に生成されます -->
+        </table>
+      </div>
+    </details>
+
+    <div id="mgqol-total" class="total">合計点: 0/30点</div>
+
+    <div class="buttons">
+      <button class="copy-button" data-target="mgqol-result">結果をコピー</button>
+      <button class="reset-button" data-type="mgqol">リセット</button>
+      <button onclick="MgApp.showTab('summary'); setTimeout(function() { window.scrollTo(0, 0); }, 50);" class="to-summary-button">スコアを表示する</button>
+    </div>
+
+    <h2>結果（コピー用）</h2>
+    <textarea id="mgqol-result" class="result" readonly></textarea>
+  </div>
+
+  <!-- スコア表示タブ -->
+  <div id="summary" class="tab-content">
+    <div class="note">
+      評価結果
+    </div>
+
+    <div class="summary-scores">
+      <div class="score-box score-box-adl">
+        <h2>MG-ADL</h2>
+        <div id="summary-adl-score" class="score-value">0/24</div>
+      </div>
+      <div class="score-box score-box-mgc">
+        <h2>MG Composite</h2>
+        <div id="summary-mgc-score" class="score-value">0/50</div>
+      </div>
+      <div class="score-box score-box-mgqol">
+        <h2>MGQOL-15</h2>
+        <div id="summary-mgqol-score" class="score-value">0/30</div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="copy-button" data-target="summary-result">結果をコピー</button>
+    </div>
+
+    <h2>結果（コピー用）</h2>
+    <textarea id="summary-result" class="result" style="height: 400px;" readonly></textarea>
+  </div>
+
+  <script>
+    // データモデル定義
+    const MgApp = {
+      // ADLのデータ構造
+      adl: {
+        // スコアデータ
+        scores: Array(8).fill(0),
+        // 各項目の定義
+        items: [
+          { name: "会話", options: ["正常", "間欠的に不明瞭もしくは鼻声", "常に不明瞭もしくは鼻声、しかし聞いて理解可能", "聞いて理解するのが困難"] },
+          { name: "咀嚼", options: ["正常", "固形物で疲労", "柔らかい食物で疲労", "経管栄養"] },
+          { name: "嚥下", options: ["正常", "まれにむせる", "頻回にむせるため、食事の変更が必要", "経管栄養"] },
+          { name: "呼吸", options: ["正常", "体動時の息切れ", "安静時の息切れ", "人工呼吸を要する"] },
+          { name: "歯磨き・櫛使用の障害", options: ["なし", "努力を要するが休息を要しない", "休息を要する", "できない"] },
+          { name: "椅子からの立ち上がり障害", options: ["なし", "軽度、時々腕を使う", "中等度、常に腕を使う", "高度、介助を要する"] },
+          { name: "複視", options: ["なし", "あるが毎日ではない", "毎日起こるが持続的でない", "常にある"] },
+          { name: "眼瞼下垂", options: ["なし", "あるが毎日ではない", "毎日起こるが持続的でない", "常にある"] }
+        ],
+        // 最大スコア
+        maxScore: 24
+      },
+      
+      // MGCのデータ構造
+      mgc: {
+        // スコアデータ
+        scores: Array(10).fill(0),
+        // 各項目の定義
+        items: [
+          { 
+            name: "上方視時の眼瞼下垂出現までの時間", 
+            description: "（医師の診察）",
+            options: [">45秒", "11〜45秒", "1〜10秒", "常時"],
+            values: [0, 1, 2, 3]
+          },
+          {
+            name: "側方視時の複視出現までの時間", 
+            description: "（医師の診察）",
+            options: [">45秒", "11〜45秒", "1〜10秒", "常時"],
+            values: [0, 1, 3, 4]
+          },
+          {
+            name: "閉眼の筋力", 
+            description: "（医師の診察）",
+            options: ["正常", "軽度低下（閉眼維持可能）", "中等度低下（閉眼維持困難）", "重度低下（閉眼不能）"],
+            values: [0, 0, 1, 2]
+          },
+          {
+            name: "会話、発音", 
+            description: "（MGADL）",
+            options: ["正常", "時に不明瞭または鼻声", "常に不明瞭または鼻声だが理解可能", "不明瞭で理解が困難"],
+            values: [0, 2, 4, 6]
+          },
+          {
+            name: "咬む動作", 
+            description: "（MGADL）",
+            options: ["正常", "固い食物で疲労", "柔らかい食物でも疲労", "栄養チューブ使用"],
+            values: [0, 2, 4, 6]
+          },
+          {
+            name: "飲み込み動作", 
+            description: "（MGADL）",
+            options: ["正常", "まれにむせる", "頻回のむせのため食事に工夫を要す", "栄養チューブ使用"],
+            values: [0, 2, 5, 6]
+          },
+          {
+            name: "MGによる呼吸状態", 
+            description: "（MGADL）",
+            options: ["正常", "活動時息切れ", "安静時息切れ", "呼吸補助装置使用"],
+            values: [0, 2, 4, 9]
+          },
+          {
+            name: "頸の前屈/背屈筋力", 
+            description: "（弱い方を選択、医師の診察）",
+            options: ["正常", "軽度低下", "中等度低下（おおよそ半減）", "重度低下"],
+            values: [0, 1, 3, 4]
+          },
+          {
+            name: "上肢の挙上筋力", 
+            description: "（医師の診察）",
+            options: ["正常", "軽度低下", "中等度低下（おおよそ半減）", "重度低下"],
+            values: [0, 2, 4, 5]
+          },
+          {
+            name: "下肢の挙上筋力", 
+            description: "（医師の診察）",
+            options: ["正常", "軽度低下", "中等度低下（おおよそ半減）", "重度低下"],
+            values: [0, 2, 4, 5]
+          }
+        ],
+        // 最大スコア
+        maxScore: 50
+      },
+      
+      // MGQOLのデータ構造
+      mgqol: {
+        // スコアデータ
+        scores: Array(15).fill(0),
+        // 各項目の定義
+        items: [
+          { name: "MGの病状に不満である" },
+          { name: "MGのため物を見る際に支障が生じる（二重に見える、まぶたが下がる、など）" },
+          { name: "MGのため食べる際に支障が生じる" },
+          { name: "MGのため社会活動に制限が生じている" },
+          { name: "MGのため趣味や娯楽を以前ほど楽しめない" },
+          { name: "MGのため家族の要求に十分応えられない" },
+          { name: "MGのため行動に工夫が必要" },
+          { name: "MGのため仕事や役割（家庭を含む）に制限が生じ悩まされている" },
+          { name: "MGのため話す際に支障が生じる" },
+          { name: "MGのため外出、用足しをひとりですることが難しい（車の運転、買い物など）" },
+          { name: "MGのため気持ちが落ち込む" },
+          { name: "MGのため歩行に支障が生じる" },
+          { name: "MGのため周囲と同じ早さで行動出来ない（公共の場所などで）" },
+          { name: "MGでつらくて精神的に押し潰されそうになる" },
+          { name: "MGのため身支度に支障が生じる" }
+        ],
+        // 最大スコア
+        maxScore: 30
+      },
+      
+      // ADLとMGCの項目マッピング定義
+      adlToMgcMap: [
+        { adlIndex: 0, mgcIndex: 3 }, // 会話 → 会話、発音
+        { adlIndex: 1, mgcIndex: 4 }, // 咀嚼 → 咬む動作
+        { adlIndex: 2, mgcIndex: 5 }, // 嚥下 → 飲み込み動作
+        { adlIndex: 3, mgcIndex: 6 }  // 呼吸 → MGによる呼吸状態
+      ],
+      
+      // 初期化処理
+      init: function() {
+        this.renderTables();
+        this.renderTapInputs();
+        this.setupEventListeners();
+        this.resetScores('adl');
+        this.resetScores('mgc');
+        this.resetScores('mgqol');
+        this.updateResults();
+      },
+      
+      // タップ入力UIの生成
+      renderTapInputs: function() {
+        // ADLタップ入力
+        const adlTapGrid = document.getElementById('adl-tap-grid');
+        this.adl.items.forEach((item, index) => {
+          const tapItem = this.createTapItem('adl', item.name, index, 3);
+          adlTapGrid.appendChild(tapItem);
+        });
+        
+        // MGCタップ入力
+        const mgcTapGrid = document.getElementById('mgc-tap-grid');
+        this.mgc.items.forEach((item, index) => {
+          const maxValue = Math.max(...item.values);
+          const tapItem = this.createTapItem('mgc', item.name, index, maxValue);
+          mgcTapGrid.appendChild(tapItem);
+        });
+        
+        // MGQOLタップ入力
+        const mgqolTapGrid = document.getElementById('mgqol-tap-grid');
+        this.mgqol.items.forEach((item, index) => {
+          const tapItem = this.createTapItem('mgqol', `${index + 1}. ${item.name.substring(0, 10)}...`, index, 2);
+          tapItem.title = item.name; // フルテキストをツールチップで表示
+          mgqolTapGrid.appendChild(tapItem);
+        });
+      },
+      
+      // タップアイテムの作成
+      createTapItem: function(type, name, index, maxScore) {
+        const div = document.createElement('div');
+        div.className = 'tap-item';
+        div.dataset.type = type;
+        div.dataset.index = index;
+        div.dataset.maxScore = maxScore;
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'tap-item-name';
+        nameDiv.textContent = name;
+        
+        const scoreDiv = document.createElement('div');
+        scoreDiv.className = 'tap-item-score';
+        scoreDiv.textContent = '0';
+        
+        div.appendChild(nameDiv);
+        div.appendChild(scoreDiv);
+        
+        // タップイベントの設定
+        div.addEventListener('click', (e) => {
+          this.handleTapInput(e, div);
+        });
+        
+        return div;
+      },
+      
+      // タップ入力の処理
+      handleTapInput: function(e, element) {
+        const type = element.dataset.type;
+        const index = parseInt(element.dataset.index);
+        const maxScore = parseInt(element.dataset.maxScore);
+        
+        // 現在のスコアを取得
+        let currentScore;
+        if (type === 'mgc') {
+          // MGCは実際の値のインデックスを取得
+          currentScore = this.mgc.scores[index];
+        } else {
+          currentScore = this[type].scores[index];
+        }
+        
+        // 次のスコアを計算（循環）
+        let nextScore;
+        if (type === 'mgc') {
+          // MGCは値の配列のインデックスを循環
+          nextScore = (currentScore + 1) % this.mgc.items[index].values.length;
+        } else {
+          nextScore = (currentScore + 1) % (maxScore + 1);
+        }
+        
+        // スコアを更新
+        this[type].scores[index] = nextScore;
+        
+        // 表示を更新
+        const scoreDiv = element.querySelector('.tap-item-score');
+        if (type === 'mgc') {
+          scoreDiv.textContent = this.mgc.items[index].values[nextScore];
+        } else {
+          scoreDiv.textContent = nextScore;
+        }
+        
+        // スタイルを更新
+        if (nextScore > 0) {
+          element.classList.add('has-score');
+        } else {
+          element.classList.remove('has-score');
+        }
+        
+        // フィードバックアニメーション
+        const feedback = document.createElement('div');
+        feedback.className = 'tap-feedback';
+        element.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 400);
+        
+        // テーブルの選択も更新
+        this.updateTableSelection(type, index, nextScore);
+        
+        // 結果を更新
+        this.updateResults();
+      },
+      
+      // テーブルの選択状態を更新
+      updateTableSelection: function(type, rowIndex, scoreIndex) {
+        const table = document.getElementById(`${type}-table`);
+        const rows = table.querySelectorAll('tr');
+        const row = rows[rowIndex + 1]; // ヘッダー行をスキップ
+        
+        // 選択解除
+        row.querySelectorAll('.selected').forEach(cell => {
+          cell.classList.remove('selected');
+        });
+        
+        // 選択
+        const options = row.querySelectorAll('.option');
+        if (options[scoreIndex]) {
+          options[scoreIndex].classList.add('selected');
+        }
+      },
+      
+      // イベントリスナーの設定
+      setupEventListeners: function() {
+        // タブ切り替え
+        document.querySelectorAll('.nav-item').forEach(navItem => {
+          navItem.addEventListener('click', () => {
+            this.showTab(navItem.dataset.tab);
+          });
+        });
+        
+        // コピーボタン
+        document.querySelectorAll('.copy-button').forEach(button => {
+          button.addEventListener('click', () => {
+            this.copyResult(button.dataset.target);
+          });
+        });
+        
+        // リセットボタン
+        document.querySelectorAll('.reset-button').forEach(button => {
+          button.addEventListener('click', () => {
+            this.resetScores(button.dataset.type);
+          });
+        });
+        
+        // タブ間移動ボタン - MGCに進む
+        document.getElementById('to-mgc').addEventListener('click', () => {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+          setTimeout(() => {
+            this.showTab('mgc');
+            this.mapAdlToMgc();
+          }, 50);
+        });
+        
+        // タブ間移動ボタン - MGQOLに進む
+        document.getElementById('to-mgqol').addEventListener('click', () => {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+          setTimeout(() => {
+            this.showTab('mgqol');
+          }, 50);
+        });
+      },
+      
+      // テーブルの描画
+      renderTables: function() {
+        // ADLテーブル
+        const adlTable = document.getElementById('adl-table');
+        
+        this.adl.items.forEach((item, rowIndex) => {
+          const row = document.createElement('tr');
+          const itemCell = document.createElement('td');
+          itemCell.className = 'item-label';
+          itemCell.textContent = item.name;
+          row.appendChild(itemCell);
+          
+          item.options.forEach((option, colIndex) => {
+            const cell = document.createElement('td');
+            cell.className = 'option';
+            cell.textContent = option;
+            cell.addEventListener('click', () => {
+              this.selectOption('adl', rowIndex, colIndex);
+            });
+            row.appendChild(cell);
+          });
+          
+          adlTable.appendChild(row);
+        });
+        
+        // MGCテーブル
+        const mgcTable = document.getElementById('mgc-table');
+        
+        this.mgc.items.forEach((item, rowIndex) => {
+          const row = document.createElement('tr');
+          const itemCell = document.createElement('td');
+          itemCell.className = 'item-label';
+          itemCell.innerHTML = `${item.name}<br><span class="description">${item.description}</span>`;
+          row.appendChild(itemCell);
+          
+          item.options.forEach((option, colIndex) => {
+            const cell = document.createElement('td');
+            cell.className = 'option';
+            cell.innerHTML = `${option}<br><span class="description">${item.values[colIndex]}点</span>`;
+            cell.addEventListener('click', () => {
+              this.selectOption('mgc', rowIndex, colIndex);
+            });
+            row.appendChild(cell);
+          });
+          
+          mgcTable.appendChild(row);
+        });
+        
+        // MGQOLテーブル
+        const mgqolTable = document.getElementById('mgqol-table');
+        
+        this.mgqol.items.forEach((item, rowIndex) => {
+          const row = document.createElement('tr');
+          const itemCell = document.createElement('td');
+          itemCell.className = 'item-label';
+          itemCell.textContent = item.name;
+          row.appendChild(itemCell);
+          
+          // 0から2までの3段階評価
+          for (let i = 0; i <= 2; i++) {
+            const cell = document.createElement('td');
+            cell.className = 'option';
+            cell.textContent = i;
+            cell.addEventListener('click', () => {
+              this.selectOption('mgqol', rowIndex, i);
+            });
+            row.appendChild(cell);
+          }
+          
+          mgqolTable.appendChild(row);
+        });
+      },
+      
+      // タブの表示切り替え
+      showTab: function(tabId) {
+        // タブコンテンツ切り替え
+        document.querySelectorAll('.tab-content').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+        
+        // タブ切り替え
+        document.querySelectorAll('.nav-item').forEach(nav => {
+          nav.classList.remove('active');
+        });
+        document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
+        
+        // サマリータブなら更新
+        if (tabId === 'summary') {
+          this.updateSummary();
+        }
+        
+        // 画面上部にスクロール
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      },
+      
+      // 選択処理（テーブルクリック時）
+      selectOption: function(type, rowIndex, colIndex) {
+        // スコア更新
+        this[type].scores[rowIndex] = colIndex;
+        
+        // テーブル表示更新
+        this.updateTableSelection(type, rowIndex, colIndex);
+        
+        // タップ入力の表示も更新
+        this.updateTapDisplay(type, rowIndex, colIndex);
+        
+        // 結果更新
+        this.updateResults();
+      },
+      
+      // タップ入力の表示を更新
+      updateTapDisplay: function(type, index, score) {
+        const tapGrid = document.getElementById(`${type}-tap-grid`);
+        const tapItem = tapGrid.children[index];
+        const scoreDiv = tapItem.querySelector('.tap-item-score');
+        
+        if (type === 'mgc') {
+          scoreDiv.textContent = this.mgc.items[index].values[score];
+        } else {
+          scoreDiv.textContent = score;
+        }
+        
+        if (score > 0) {
+          tapItem.classList.add('has-score');
+        } else {
+          tapItem.classList.remove('has-score');
+        }
+      },
+      
+      // ADLの合計点計算
+      calculateAdlTotal: function() {
+        return this.adl.scores.reduce((sum, score) => sum + score, 0);
+      },
+      
+      // MGCの合計点計算
+      calculateMgcTotal: function() {
+        return this.mgc.scores.reduce((sum, score, index) => {
+          return sum + this.mgc.items[index].values[score];
+        }, 0);
+      },
+      
+      // MGQOLの合計点計算
+      calculateMgqolTotal: function() {
+        return this.mgqol.scores.reduce((sum, score) => sum + score, 0);
+      },
+      
+      // 全結果表示の更新
+      updateResults: function() {
+        this.updateAdlResult();
+        this.updateMgcResult();
+        this.updateMgqolResult();
+        this.updateSummary();
+      },
+      
+      // ADL結果の更新
+      updateAdlResult: function() {
+        const total = this.calculateAdlTotal();
+        
+        // 合計表示の更新
+        document.getElementById('adl-total').textContent = `合計点: ${total}/${this.adl.maxScore}点`;
+        document.getElementById('summary-adl-score').textContent = `${total}/${this.adl.maxScore}`;
+        
+        // 結果テキストの更新
+        let resultText = "MG-ADLスケール結果\n";
+        resultText += "日付: " + new Date().toLocaleDateString('ja-JP') + "\n";
+        resultText += "------------------------\n";
+        
+        this.adl.items.forEach((item, index) => {
+          const score = this.adl.scores[index];
+          const selectedText = item.options[score];
+          resultText += `${item.name}: ${score}点 (${selectedText})\n`;
+        });
+        
+        resultText += "------------------------\n";
+        resultText += `合計点: ${total}/${this.adl.maxScore}点`;
+        
+        document.getElementById('adl-result').value = resultText;
+      },
+      
+      // MGC結果の更新
+      updateMgcResult: function() {
+        const total = this.calculateMgcTotal();
+        
+        // 合計表示の更新
+        document.getElementById('mgc-total').textContent = `合計点: ${total}/${this.mgc.maxScore}点`;
+        document.getElementById('summary-mgc-score').textContent = `${total}/${this.mgc.maxScore}`;
+        
+        // 結果テキストの更新
+        let resultText = "MG Composite Scale結果\n";
+        resultText += "日付: " + new Date().toLocaleDateString('ja-JP') + "\n";
+        resultText += "------------------------\n";
+        
+        this.mgc.items.forEach((item, index) => {
+          const score = this.mgc.scores[index];
+          const selectedText = item.options[score];
+          const scoreValue = item.values[score];
+          
+          resultText += `${item.name}\n`;
+          resultText += `  ${scoreValue}点: ${selectedText}\n`;
+        });
+        
+        resultText += "------------------------\n";
+        resultText += `合計点: ${total}/${this.mgc.maxScore}点`;
+        
+        document.getElementById('mgc-result').value = resultText;
+      },
+      
+      // MGQOL結果の更新
+      updateMgqolResult: function() {
+        const total = this.calculateMgqolTotal();
+        
+        // 合計表示の更新
+        document.getElementById('mgqol-total').textContent = `合計点: ${total}/${this.mgqol.maxScore}点`;
+        document.getElementById('summary-mgqol-score').textContent = `${total}/${this.mgqol.maxScore}`;
+        
+        // 結果テキストの更新
+        let resultText = "MGQOL-15r結果\n";
+        resultText += "日付: " + new Date().toLocaleDateString('ja-JP') + "\n";
+        resultText += "------------------------\n";
+        
+        this.mgqol.items.forEach((item, index) => {
+          const score = this.mgqol.scores[index];
+          const scoreText = ["全くそうは思わない", "少しそう思う", "強くそう思う"][score];
+          resultText += `${index + 1}. ${item.name}: ${score}点 (${scoreText})\n`;
+        });
+        
+        resultText += "------------------------\n";
+        resultText += `合計点: ${total}/${this.mgqol.maxScore}点`;
+        
+        document.getElementById('mgqol-result').value = resultText;
+      },
+      
+      // サマリー更新
+      updateSummary: function() {
+        const adlTotal = this.calculateAdlTotal();
+        const mgcTotal = this.calculateMgcTotal();
+        const mgqolTotal = this.calculateMgqolTotal();
+        
+        let summaryText = "MG評価スケール 総合結果\n";
+        summaryText += "日付: " + new Date().toLocaleDateString('ja-JP') + "\n";
+        summaryText += "========================\n\n";
+        
+        // ADL結果
+        summaryText += "【MG-ADL スケール】\n";
+        summaryText += `合計点: ${adlTotal}/${this.adl.maxScore}点\n\n`;
+        this.adl.items.forEach((item, index) => {
+          const score = this.adl.scores[index];
+          const selectedText = item.options[score];
+          summaryText += `${item.name}: ${score}点 (${selectedText})\n`;
+        });
+        summaryText += "\n\n";
+        
+        // MGC結果
+        summaryText += "【MG Composite Scale】\n";
+        summaryText += `合計点: ${mgcTotal}/${this.mgc.maxScore}点\n\n`;
+        this.mgc.items.forEach((item, index) => {
+          const score = this.mgc.scores[index];
+          const selectedText = item.options[score];
+          const scoreValue = item.values[score];
+          summaryText += `${item.name}: ${scoreValue}点 (${selectedText})\n`;
+        });
+        summaryText += "\n\n";
+        
+        // MGQOL結果
+        summaryText += "【MGQOL-15r】\n";
+        summaryText += `合計点: ${mgqolTotal}/${this.mgqol.maxScore}点\n\n`;
+        this.mgqol.items.forEach((item, index) => {
+          const score = this.mgqol.scores[index];
+          const scoreText = ["全くそうは思わない", "少しそう思う", "強くそう思う"][score];
+          summaryText += `${index + 1}. ${item.name}: ${score}点 (${scoreText})\n`;
+        });
+        
+        document.getElementById('summary-result').value = summaryText;
+      },
+      
+      // 結果コピー
+      copyResult: function(elementId) {
+        const resultText = document.getElementById(elementId);
+        resultText.select();
+        document.execCommand('copy');
+        alert('結果をクリップボードにコピーしました');
+      },
+      
+      // スコアリセット
+      resetScores: function(type) {
+        // スコアを0に初期化
+        this[type].scores.fill(0);
+        
+        // テーブル表示の更新
+        const table = document.getElementById(`${type}-table`);
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 1; i < rows.length; i++) { // ヘッダー行をスキップ
+          const row = rows[i];
+          
+          // 選択解除
+          row.querySelectorAll('.selected').forEach(cell => {
+            cell.classList.remove('selected');
+          });
+          
+          // 0点（最初の選択肢）を選択
+          const options = row.querySelectorAll('.option');
+          if (options.length > 0) {
+            options[0].classList.add('selected');
+          }
+        }
+        
+        // タップ入力表示の更新
+        const tapGrid = document.getElementById(`${type}-tap-grid`);
+        Array.from(tapGrid.children).forEach((tapItem, index) => {
+          const scoreDiv = tapItem.querySelector('.tap-item-score');
+          scoreDiv.textContent = '0';
+          tapItem.classList.remove('has-score');
+        });
+        
+        // 結果更新
+        this.updateResults();
+      },
+      
+      // ADLからMGCへのマッピング
+      mapAdlToMgc: function() {
+        this.adlToMgcMap.forEach(mapping => {
+          const adlIndex = mapping.adlIndex;
+          const mgcIndex = mapping.mgcIndex;
+          
+          // ADLの値をMGCに反映
+          this.mgc.scores[mgcIndex] = this.adl.scores[adlIndex];
+          
+          // MGCテーブルの表示も更新
+          this.updateTableSelection('mgc', mgcIndex, this.adl.scores[adlIndex]);
+          
+          // タップ入力の表示も更新
+          this.updateTapDisplay('mgc', mgcIndex, this.adl.scores[adlIndex]);
+        });
+        
+        // 結果更新
+        this.updateResults();
+      }
+    };
+    
+    // 初期化実行
+    document.addEventListener('DOMContentLoaded', function() {
+      MgApp.init();
+    });
+  </script>
+</body>
+</html>
