@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Everybody Lies - 神経内科問診トレーニング</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif; background: #0f172a; color: #e2e8f0; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+  @keyframes scoreReveal { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes barFill { from { width: 0%; } }
+  @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 5px rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 20px rgba(239,68,68,0.6); } }
+
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  .slide-up { animation: slideUp 0.4s ease-out; }
+  .score-reveal { animation: scoreReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .bar-fill { animation: barFill 1s ease-out; }
+  .glow { animation: glowPulse 2s ease-in-out infinite; }
+  .dot { display: inline-block; animation: pulse 1.4s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  .screen { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100%; padding: 16px; overflow-y: auto; padding-top: 32px; }
+  .card { background: #1e293b; border-radius: 12px; padding: 24px; width: 100%; max-width: 480px; border: 1px solid #334155; }
+
+  .chat-wrap { display: flex; flex-direction: column; height: 100%; }
+  .chat-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #1e293b; border-bottom: 1px solid #334155; }
+  .chat-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-footer { flex-shrink: 0; padding: 8px; background: #1e293b; border-top: 1px solid #334155; }
+
+  .msg { max-width: 88%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; animation: fadeIn 0.3s ease-out; }
+  .msg-user { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 4px; }
+  .msg-system { align-self: center; background: #334155; text-align: center; font-size: 12px; color: #94a3b8; padding: 6px 14px; }
+  .msg-patient { align-self: flex-start; background: #1e293b; border: 1px solid #334155; border-bottom-left-radius: 4px; }
+  .msg-exam { align-self: flex-start; background: rgba(22,101,52,0.3); border: 1px solid rgba(34,197,94,0.3); border-bottom-left-radius: 4px; }
+  .msg-lab { align-self: flex-start; background: rgba(113,63,18,0.3); border: 1px solid rgba(234,179,8,0.3); border-bottom-left-radius: 4px; }
+  .msg-gm { align-self: center; background: rgba(88,28,135,0.2); border: 1px solid rgba(168,85,247,0.25); font-size: 12px; color: #c4b5fd; max-width: 95%; text-align: center; }
+  .msg-error { align-self: flex-start; background: rgba(127,29,29,0.3); border: 1px solid rgba(239,68,68,0.3); }
+  .msg-label { font-size: 11px; margin-bottom: 4px; opacity: 0.7; }
+
+  input, textarea { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; font-size: 14px; width: 100%; outline: none; font-family: inherit; transition: border-color 0.2s; }
+  input:focus, textarea:focus { border-color: #3b82f6; }
+  textarea { resize: vertical; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; color: white; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:not(:disabled):hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn:not(:disabled):active { transform: translateY(0); }
+  .btn-red { background: #dc2626; }
+  .btn-blue { background: #2563eb; }
+  .btn-green { background: #16a34a; }
+  .btn-gray { background: #475569; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; font-weight: 500; border-radius: 6px; }
+
+  .nav-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 12px; font-family: inherit; padding: 4px 8px; transition: color 0.2s; }
+  .nav-btn:hover { color: #e2e8f0; }
+
+  .scenario-btn { display: flex; align-items: center; width: 100%; padding: 14px 16px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; cursor: pointer; color: #e2e8f0; font-family: inherit; font-size: 14px; transition: all 0.2s; text-align: left; gap: 12px; }
+  .scenario-btn:hover { background: #334155; border-color: #475569; transform: translateX(4px); }
+
+  .score-bar-bg { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
+
+  .overlay { position: fixed; inset: 0; z-index: 10; background: rgba(15,23,42,0.94); display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease-out; }
+
+  .title { font-size: 36px; font-weight: 800; color: #ef4444; letter-spacing: -1px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .stars { color: #eab308; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const API_KEY = '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';
+
+/* ============================================================
+   COMMON SYSTEM PROMPT
+   ============================================================ */
+const COMMON_SYSTEM_PROMPT = `あなたは医学教育用の問診シミュレーションで患者役を演じるAIです。以下のルールを厳守してください。
+
+【絶対ルール】
+1. あなたは患者（または付き添い者）です。医師ではありません。自分の病名・診断名・検査値を知りません。
+2. 「私はAIです」「これはシミュレーションです」等のメタ発言は絶対にしないでください。
+3. 医学用語は使わず、患者が実際に使う日常的な言葉で話してください。
+   - ×「複視があります」 → ○「なんか二重に見えるんです」
+   - ×「近位筋の筋力低下」 → ○「腕が上がりにくくて」
+4. 聞かれたことだけに答えてください。聞かれていない症状を自分から話さないでください。
+5. 「他に何かありますか？」「他に症状は？」のような漠然とした質問には「特にないです…」「うーん、特には…」等と答えてください。具体的に「手がしびれますか？」「夜中に目が覚めますか？」等と聞かれて初めて、該当する症状があれば答えてください。
+6. 回答は1-3文で簡潔にしてください。長い説明はしないでください。
+7. 診察や検査を求められた場合は「はい、お願いします」とだけ答えてください。検査結果や身体所見は別システムが提供します。
+8. 患者として自然な感情を見せてください（不安、苛立ち、恥ずかしさ等）。ただし大げさにしすぎないでください。
+
+以下にこの患者の詳細設定を示します。この設定に忠実に演じてください。
+---
+`;
+
+/* ============================================================
+   SCENARIO DATA
+   ============================================================ */
+const scenarios = [
+  {
+    id: 'A-3',
+    chiefComplaint: '画面がぼやける・眼鏡を替えても改善しない',
+    presentation: '45歳女性「最近パソコンの画面がぼやけて見えるので、眼科で眼鏡を作り直したんですが全然よくならなくて」',
+    difficulty: 2, maxScore: 6,
+    diagnosis: '重症筋無力症',
+    differentials: ['LEMS','動眼神経麻痺','甲状腺眼症','CPEO'],
+    requiredTests: ['抗体','CT','反復刺激'],
+    examFindings: `【バイタルサイン】正常範囲内
+【視診】両側眼瞼下垂あり（右＞左）
+【眼球運動】右外転制限あり
+【上方注視テスト】60秒持続で眼瞼下垂が著明に増悪
+【アイスパックテスト】陽性（氷嚢を2分間あてると眼瞼下垂が改善）
+【四肢筋力】三角筋の反復収縮で易疲労性あり（最初は5/5→反復後4/5）
+【腱反射】正常 【感覚】正常`,
+    labResults: [
+      { triggers: ['抗体','血液','採血','血清'], result: '抗AChR抗体 15.0 nmol/L（陽性・基準値 <0.2）\nCK 正常、TSH/FT4 正常' },
+      { triggers: ['反復刺激','筋電図','電気生理','神経伝導'], result: '反復刺激試験（3Hz）：僧帽筋でdecrement 18%（陽性）\n単線維筋電図：jitter増大' },
+      { triggers: ['CT','画像','胸部','縦隔'], result: '胸部CT：前縦隔に3cm大の腫瘤あり（胸腺腫疑い）\n肺野に異常なし' },
+      { triggers: ['MRI','頭部'], result: '頭部MRI：明らかな異常なし' },
+    ],
+    patientProfile: `【基本情報】名前：中村 香織、45歳女性、IT企業経理部（デスクワーク）、独身一人暮らし
+【性格】テキパキした性格。仕事の忙しさのせいにしがち。少しイライラしているが不安もある。
+【患者の理解】VDT症候群（パソコン疲れ）だと思っている。
+【実際の症状】主訴：画面がぼやける（2ヶ月前から）。「ぼやける」の正体は物が二重に見える（横にずれる）→複視。夕方になると瞼が重い→眼瞼下垂。朝は楽、夕方〜金曜が最悪、土曜朝は楽→日内変動。同じ作業続けると悪化、休むと改善→易疲労性。ペットボトルの蓋が開けにくい、シャンプー時に腕がだるい。固いもの噛んでると顎がだるい。
+【ないもの】痛みなし、しびれなし、頭痛なし、飲み込みにくさなし、息苦しさなし
+【既往】甲状腺が少し腫れてると言われたことあり。母が甲状腺の病気。
+【この患者固有のルール】
+- 「ぼやける」と最初は言うが、「二重に見えますか？」等と具体的に聞かれると「そういえば二重に見える気がします」と答える
+- 時間帯を聞かれたら日内変動を詳しく答える`,
+  },
+  {
+    id: 'A-4',
+    chiefComplaint: '右肩のこり・右腕の重さが治らない',
+    presentation: '55歳男性「肩が凝ってしょうがないんです。右腕も重たくて、整体に通ってるんですけど全然よくならなくて」',
+    difficulty: 2, maxScore: 5,
+    diagnosis: 'パーキンソン病',
+    differentials: ['本態性振戦','DLB','MSA-P','CBD','薬剤性パーキンソニズム'],
+    requiredTests: ['DAT','MRI'],
+    examFindings: `【バイタルサイン】正常範囲内、起立性低血圧なし
+【視診】仮面様顔貌（表情が乏しい）、やや前傾姿勢
+【振戦】右上肢に安静時振戦あり（pill-rolling tremor、4-6Hz）。姿勢時・動作時は減弱
+【筋トーヌス】右上肢に歯車様筋強剛（左は軽度）
+【指タップテスト】右手のfinger tapで振幅漸減・リズム不整（bradykinesia）
+【歩行】右腕振り減少、小刻み歩行。方向転換でやや不安定
+【嗅覚】嗅覚低下あり（コーヒー・カレーの識別困難）
+【腱反射】正常 【感覚】正常 【小脳失調】なし`,
+    labResults: [
+      { triggers: ['DAT','SPECT','ダット','ドパミン'], result: 'DATスキャン：左被殻の取り込み著明低下（右は軽度低下）\n→黒質線条体ドパミン系の変性を示唆' },
+      { triggers: ['MIBG','心臓','心筋'], result: 'MIBG心筋シンチ：H/M比 早期1.4 後期1.2（低下）\nwashout rate上昇 → 心臓交感神経の脱神経を示唆' },
+      { triggers: ['MRI','頭部','画像'], result: '頭部MRI：年齢相応の軽度萎縮のみ。基底核・脳幹に異常信号なし。\n→ MSA、CBD、PSPを示唆する所見なし' },
+      { triggers: ['血液','採血','甲状腺','血清'], result: '一般血液検査：異常なし\n甲状腺機能：TSH, FT4 正常範囲\n銅・セルロプラスミン：正常' },
+    ],
+    patientProfile: `【基本情報】名前：山田 隆、55歳男性、市役所係長、妻と息子2人と暮らす
+【性格】穏やかだが頑固。妻に言われて渋々来た。大した病気ではないと思いたい。口数少なめ。
+【患者の理解】肩こりと疲労、仕事のストレスだと思っている。
+【実際の症状】（半年前から）主訴：右肩のこり、右腕の重さ。右手が震える（じっとしてるとき、テレビ見てるとき）→安静時振戦。字が小さくなった（部下に指摘）→小字症。声が小さくなった（妻に指摘）→小声。カレーの匂いがわかりにくい→嗅覚低下。夜中に叫んだり暴れる（妻に言われた、本人は覚えてない）→RBD。歩くのが遅くなった、動作が遅い、ボタン留めに時間かかる。表情が乏しいと言われる、便秘がち。
+【ないもの】しびれなし、物忘れは年相応、立ちくらみなし
+【家族歴】父がパーキンソン病（70代発症）
+【この患者固有のルール】
+- 肩こりを主訴とするが、聞いていくと様々な症状が出てくる
+- 震えは「言われてみれば…テレビ見てるときとか、妻に言われました」という感じで
+- 妻からの指摘として語ることが多い`,
+  },
+  {
+    id: 'A-6',
+    chiefComplaint: '急速に悪化する腰痛・両足のしびれ・歩行不能',
+    presentation: '30歳男性「腰痛がどんどんひどくなって、正座したみたいに足がしびれるんです。今朝は立てなくなって彼女に連れてきてもらいました」',
+    difficulty: 2, maxScore: 5,
+    diagnosis: 'Guillain-Barré症候群',
+    differentials: ['CIDP','横断性脊髄炎','急性ポルフィリア','重金属中毒'],
+    requiredTests: ['髄液','神経伝導'],
+    examFindings: `【バイタルサイン】心拍数102/min（軽度頻脈）、血圧 128/78、SpO2 96%
+【四肢筋力】
+  上肢：三角筋4/5、握力やや低下
+  下肢：腸腰筋3/5、大腿四頭筋3/5、前脛骨筋3/5（両側）
+【腱反射】両下肢腱反射消失（膝蓋腱・アキレス腱）、上肢腱反射低下
+【感覚】両足趾〜足背にしびれ感（手袋靴下型）
+【歩行】独歩不可。支持歩行でも膝折れあり
+【呼吸機能】努力呼吸なし、ただし深吸気で胸郭拡張やや不良
+【膀胱直腸障害】軽度の排尿困難感あり`,
+    labResults: [
+      { triggers: ['髄液','腰椎穿刺','ルンバール','CSF'], result: '髄液検査：\n蛋白 128 mg/dL（↑↑ 基準値 15-45）\n細胞数 2/μL（正常）\n糖 正常\n→ 蛋白細胞解離（GBSに特徴的）' },
+      { triggers: ['神経伝導','NCS','電気生理','筋電図'], result: '神経伝導検査：\n運動神経伝導速度低下、伝導ブロック、遠位潜時延長\n→ 脱髄型パターン（AIDP）\n抗GM1-IgG抗体：陽性' },
+      { triggers: ['MRI','腰椎','脊髄','画像'], result: '腰椎MRI：椎間板ヘルニアなし、脊髄圧迫なし\n馬尾の造影効果あり（神経根の炎症を示唆）' },
+      { triggers: ['血液','採血','血清','CK'], result: '一般血液検査：WBC正常、CRP軽度上昇\nCK 正常\n抗GM1-IgG抗体：陽性\n便培養（2週間前）：Campylobacter jejuni検出' },
+    ],
+    patientProfile: `【基本情報】名前：鈴木 大輝、30歳男性、引っ越し業者、彼女と同棲
+【性格】明るく体育会系。「まあ大したことないっしょ」が口癖だが内心焦っている。カジュアルな話し方。
+【患者の理解】ギックリ腰の重いやつだと思っている。
+【実際の症状】（3日前から、毎日悪化）主訴：腰痛、両足のしびれ。最初は腰だけ→足のしびれ→今朝立てなくなった（上行性）。足に力が入らない、膝がガクッとなった。手も少ししびれてきた。トイレが近い、出にくい感じ。深呼吸しにくい気がする。
+【超重要】2週間前にひどい下痢をした（飲み会で鶏の刺身を食べた翌日から3日間）→先行感染
+【ないもの】頭痛なし、複視なし、喋りにくさなし、飲み込みにくさなし
+【既往】なし（健康が取り柄）
+【この患者固有のルール】
+- 先行感染（2週間前の下痢）は超重要！「最近体調崩したことは？」等と聞かれたら答える
+- 症状が急速に悪化していることを強調（「昨日はまだ歩けたんすけど」等）`,
+  },
+  {
+    id: 'C-1',
+    chiefComplaint: '急な性格変化・支離滅裂な言動（母親付き添い）',
+    presentation: '25歳女性（母親が付き添い）「（母）元々ストレスが多い子なんですが、急に仕事を辞めると言い出して…精神科に行ったら念のため神経内科も受診してと言われました」',
+    difficulty: 3, maxScore: 6,
+    diagnosis: '抗NMDA受容体脳炎',
+    differentials: ['ウイルス性脳炎','急性精神病','抗LGI1脳炎','薬物中毒'],
+    requiredTests: ['抗体','髄液','骨盤'],
+    examFindings: `【バイタルサイン】体温37.4℃、心拍数88/min、血圧正常
+【意識レベル】GCS E4V4M5（開眼するが会話は支離滅裂、痛み刺激で払いのける）
+【不随意運動】口顔面ジスキネジア（口をもぐもぐ動かしている）、上肢に舞踏病様運動あり
+【項部硬直】なし
+【瞳孔】正円同大、対光反射あり
+【四肢】明らかな麻痺なし、腱反射正常
+【髄膜刺激徴候】なし
+（診察中、莉子が突然声を上げて手を振り回す場面あり）`,
+    labResults: [
+      { triggers: ['髄液','腰椎穿刺','ルンバール','CSF'], result: '髄液検査：\n細胞数 45/μL（↑ リンパ球優位）\n蛋白 60 mg/dL（軽度上昇）\n糖 正常\nウイルスPCR：HSV, VZV, エンテロ → すべて陰性\n抗NMDA受容体抗体：陽性（後日判明）' },
+      { triggers: ['抗体','血液','採血','血清','自己抗体'], result: '抗NMDA受容体抗体（血清）：陽性\n抗LGI1抗体：陰性\n抗CASPR2抗体：陰性\n一般血液検査：WBC軽度上昇、CRP正常\n薬物スクリーニング：陰性' },
+      { triggers: ['MRI','頭部','脳'], result: '頭部MRI（FLAIR）：明らかな異常信号なし\n→ 抗NMDAR脳炎ではMRI正常のことが多い' },
+      { triggers: ['脳波','EEG'], result: '脳波：全般性徐波化、前頭部優位にextreme delta brush\n→ 抗NMDAR脳炎に特徴的な所見' },
+      { triggers: ['骨盤','卵巣','婦人科','腹部','エコー'], result: '骨盤MRI：左卵巣に4cm大の腫瘤あり\n造影パターンから奇形腫（teratoma）が疑われる\n→ 抗NMDAR脳炎の腫瘍随伴原因として重要' },
+    ],
+    patientProfile: `【特別設定】あなたは患者本人ではなく、母親（山口恵美、55歳）を演じてください。患者本人（山口莉子、25歳）は意識レベル低下でまともに会話できません。母親が代わりに答えます。
+【患者情報】山口莉子、25歳女性、広告代理店営業アシスタント、都内一人暮らし
+【母親の話し方】非常に不安。「治りますか？」と繰り返す。丁寧語。
+【経過】2週間前から急に様子がおかしくなった。最初は不機嫌、変なことを言う（「誰かに見られてる」等）→精神症状。急に「仕事辞める」と支離滅裂。5日前から手がプルプル動く→不随意運動。昨日から口をモグモグ→口顔面ジスキネジア。3日前に職場で痙攣（同僚から聞いた）。37度台の微熱。精神科でリスパダール出されたが余計にぼーっと→抗精神病薬過敏性。昨日のことも覚えてない→記憶障害。
+【既往】大きな病気なし。【重要】婦人科で卵巣嚢腫があると言われた（経過観察中）→聞かれたら答える
+【この患者固有のルール】
+- 母親として答える。「娘は〜」「莉子は〜」
+- 時々（莉子が口をもぐもぐさせている）（莉子が急に手を振り回す）等の描写を入れる
+- 卵巣嚢腫は婦人科や女性特有の病気について聞かれたら答える
+- 診察や検査を求められたら「はい、お願いします。…莉子は治りますか？」と答える`,
+  },
+  {
+    id: 'A-2',
+    chiefComplaint: '右目が見えにくい・以前にも手足がしびれたことがある',
+    presentation: '28歳女性「3日前から右目がぼんやり霞んで見えにくくなって…眼科で異常ないと言われて、こちらに来ました」',
+    difficulty: 2, maxScore: 5,
+    diagnosis: '多発性硬化症',
+    differentials: ['視神経脊髄炎(NMOSD)','サルコイドーシス','中枢性血管炎','ADEM'],
+    requiredTests: ['MRI','髄液'],
+    examFindings: `【バイタルサイン】正常範囲内
+【視力】右0.3（矯正不能）、左1.2
+【瞳孔】RAPD陽性（右）＝相対的入力瞳孔求心路障害
+【眼底】軽度の視神経乳頭腫脹（右）
+【眼球運動】正常
+【感覚】右下肢の振動覚低下
+【腱反射】両下肢やや亢進
+【病的反射】バビンスキー徴候 右陽性
+【レルミット徴候】陽性（頸部前屈で背中に電撃様のしびれ）
+【四肢筋力】概ね正常`,
+    labResults: [
+      { triggers: ['MRI','画像','頭部','脊髄'], result: '頭部MRI（FLAIR）：脳室周囲・皮質下白質に多発する高信号病変あり（Dawson finger様）。一部Gd増強あり（活動性病変）。\n脊髄MRI：C3-4レベルに1椎体未満の短い高信号病変あり\n→ 時間的・空間的多発性を示唆' },
+      { triggers: ['髄液','腰椎穿刺','ルンバール','CSF'], result: '髄液検査：\n細胞数 8/μL（軽度上昇、リンパ球主体）\n蛋白 52 mg/dL（軽度上昇）\nオリゴクローナルバンド：陽性\nIgGインデックス：0.85（上昇）\n→ 中枢神経系の炎症を示唆' },
+      { triggers: ['誘発電位','VEP','視覚'], result: '視覚誘発電位（VEP）：右P100潜時延長（132ms、基準値 <110ms）\n→ 右視神経の脱髄を示唆' },
+      { triggers: ['血液','採血','血清','抗体'], result: '抗AQP4抗体：陰性\n抗MOG抗体：陰性\n→ NMOSDを否定的\nACE正常（サルコイドーシス否定的）\n一般血液検査：異常なし' },
+    ],
+    patientProfile: `【基本情報】名前：佐藤 美咲、28歳女性、フリーランスのWebデザイナー、彼氏と同棲中
+【性格】明るいが心配性。ネットで色々調べてしまうタイプ。「失明しますか？」と不安がっている。
+【患者の理解】眼科で異常なしと言われ混乱。疲れ目かストレスだと思っている。
+【実際の症状】3日前から右目がぼんやり見えにくい。特に色がくすんで見える（赤い物が茶色っぽく見える）→色覚異常。目を動かすと目の奥が痛い→球後痛。半年前に左手が1ヶ月ほどしびれたが自然に治った（病院行かず放置）。1年前にも右足がしびれて2週間で治った。最近お風呂に入ると見えにくさが悪化する気がする→ウートフ現象。首を前に曲げると背中にビリッと電気が走る→レルミット徴候。
+【ないもの】頭痛なし、嘔吐なし、痙攣なし、排尿障害なし、筋力低下の自覚なし
+【この患者固有のルール】
+- 過去のしびれエピソード（左手、右足）は自分からは言わない。「以前似たような症状は？」「しびれたことは？」等と具体的に聞かれて初めて答える
+- 「お風呂で悪化」「温度で変わる」等を聞かれたらウートフ現象を答える
+- 首の症状は「首を動かすと何か感じますか？」等と聞かれたら答える`,
+  },
+  {
+    id: 'A-5',
+    chiefComplaint: '箸が使いにくい・手の筋肉が痩せてきた',
+    presentation: '62歳男性「半年くらい前から右手に力が入りにくくて…最近は箸もうまく使えなくなってきました。手の筋肉も痩せてきた気がして」',
+    difficulty: 2, maxScore: 5,
+    diagnosis: '筋萎縮性側索硬化症',
+    differentials: ['頚椎症性脊髄症','多巣性運動ニューロパチー(MMN)','平山病','封入体筋炎'],
+    requiredTests: ['筋電図','MRI'],
+    examFindings: `【バイタルサイン】正常範囲内
+【視診】右手の骨間筋萎縮著明、母指球筋萎縮。左手も軽度萎縮
+【線維束攣縮】両上肢および舌にfasciculationあり
+【筋力】右手握力15kg（低下）、右上肢遠位筋4/5、近位筋4+/5。左上肢遠位筋4+/5。下肢は右膝伸展4+/5、他は概ね正常
+【腱反射】上下肢とも亢進（++〜+++）、顎反射亢進
+【病的反射】ホフマン反射 両側陽性、バビンスキー 右陽性
+【感覚】正常（！重要：感覚障害なし）
+【構音】軽度の構音障害あり（「パパパ」「タタタ」がやや不明瞭）
+【舌】軽度萎縮、線維束攣縮あり`,
+    labResults: [
+      { triggers: ['筋電図','EMG','電気生理','神経伝導','NCS'], result: '針筋電図：上肢・下肢・傍脊柱筋に広範な脱神経所見\n（陽性鋭波・線維自発電位・巨大MUP）\n→ 進行中の脱神経＋慢性再神経支配\n運動神経伝導速度：正常〜軽度低下\n伝導ブロック：なし（MMN否定的）\n→ 広範な前角細胞障害を示唆' },
+      { triggers: ['MRI','画像','頚椎','頭部','脊髄'], result: '頚椎MRI：軽度の変性変化あるも脊髄圧迫なし\n→ 頚椎症性脊髄症を否定\n頭部MRI：皮質脊髄路に沿った軽度のFLAIR高信号\n→ 上位運動ニューロン変性を示唆' },
+      { triggers: ['血液','採血','血清','CK','抗体'], result: 'CK 280 U/L（軽度上昇）\n一般血液検査：正常\n抗GM1-IgG抗体：陰性（MMN否定的）\n甲状腺機能：正常\n鉛・水銀：正常範囲' },
+      { triggers: ['髄液','腰椎穿刺','ルンバール'], result: '髄液検査：正常範囲内（蛋白、細胞数、糖すべて正常）' },
+    ],
+    patientProfile: `【基本情報】名前：田中 正雄、62歳男性、元中学校教師（退職後嘱託で週3日勤務）、妻と二人暮らし、娘が二人（独立）
+【性格】真面目で几帳面。「年のせいかな」と楽観的に振る舞うが、内心は怖がっている。我慢強い。
+【患者の理解】頚椎のヘルニアか、加齢のせいだと思っている。
+【実際の症状】半年前から右手に力が入りにくい。箸が使いにくい、小さい物がつまめない。字を書くのが辛くなった（「ミミズみたいな字になる」）。ペットボトルの蓋が開けにくい。最近、話していると舌がもつれる感じがある（妻に「何言ってるかわからない時がある」と指摘された）。足は大丈夫だが、階段で少しつまずきやすい。筋肉がピクピク動く→両腕。体重が3kg減った（食欲はあるが飲み込みにくさで食事量減）。
+【ないもの】しびれなし（超重要！聞かれたら明確に否定）、痛みなし、排尿排便正常、物忘れなし
+【既往】高血圧（アムロジピン内服中）
+【この患者固有のルール】
+- 「しびれ」がないことが非常に重要。聞かれたら「しびれはないんです、力が入らないだけで」と明確に答える
+- 筋肉のピクピク（fasciculation）は「何か筋肉が勝手に動くことは？」等と聞かれたら答える
+- 飲み込みにくさ・喋りにくさは自覚が薄い。「妻に言われて」パターン
+- 体重減少は聞かれたら答える`,
+  },
+  {
+    id: 'B-1',
+    chiefComplaint: '歩き方がおかしい・物忘れ・トイレが間に合わない（妻付き添い）',
+    presentation: '75歳男性（妻が付き添い）「（妻）主人の歩き方が半年くらい前からおかしくて…小刻みにペタペタ歩くんです。物忘れも増えて、最近はトイレも間に合わないことがあって」',
+    difficulty: 2, maxScore: 5,
+    diagnosis: '特発性正常圧水頭症',
+    differentials: ['アルツハイマー型認知症','パーキンソン病','脳血管性認知症','レビー小体型認知症'],
+    requiredTests: ['MRI','髄液'],
+    examFindings: `【バイタルサイン】正常範囲内
+【認知機能】MMSE 22/30（遅延再生-4、注意計算-2、構成-2）。思考緩慢だが取り繕い少ない
+【歩行】wide-based（開脚歩行）、小刻み、すり足歩行（magnetic gait）。方向転換で不安定。腕振りは比較的保たれる
+【振戦】なし
+【筋トーヌス】両下肢で軽度亢進（歯車様ではない）
+【腱反射】両下肢やや亢進、病的反射なし
+【感覚】正常
+【前頭葉徴候】把握反射 陽性
+【排尿】妻によると切迫性尿失禁あり（1日1-2回パッド交換）`,
+    labResults: [
+      { triggers: ['MRI','画像','頭部','CT'], result: '頭部MRI：脳室拡大著明（Evans index 0.35、基準値 <0.3）\nSylvius裂の不均衡な拡大\n高位円蓋部・正中の脳溝狭小化\n→ DESH所見（iNPHに特徴的）\n深部白質に軽度の虚血性変化あり' },
+      { triggers: ['髄液','腰椎穿刺','ルンバール','CSF','タップテスト'], result: '腰椎穿刺：\n髄液圧 150mmH2O（正常範囲）\n性状正常\n30mL排液後のタップテスト：\n歩行速度 25%改善、歩幅拡大、方向転換安定化\n→ タップテスト陽性（シャント手術の効果が期待できる）' },
+      { triggers: ['血液','採血','血清'], result: '一般血液検査：異常なし\n甲状腺機能：TSH, FT4 正常\nビタミンB12：正常\n葉酸：正常\n梅毒検査：陰性' },
+      { triggers: ['脳波','EEG'], result: '脳波：全般性の軽度徐波化（びまん性の大脳機能低下を示唆）\n焦点性異常なし、てんかん性放電なし' },
+    ],
+    patientProfile: `【特別設定】妻（木村 和子、72歳）がメインで答える。本人（木村 勝、75歳）も簡単な受け答えはできるが反応が遅い。
+【患者情報】木村 勝、75歳男性、元会社員（定年退職後は趣味の将棋と散歩）、妻と二人暮らし
+【妻の話し方】心配性だが明るい。「歳のせいかと思ったんですけど…」が口癖。「認知症でしょうか」と心配している。丁寧語。
+【経過】半年前から歩き方がペタペタと小刻みになった。つまずきやすい。3ヶ月前から物忘れが目立つ（約束を忘れる、同じ話を繰り返す）。ただし穏やかで人格変化はない。2ヶ月前からトイレに間に合わないことが増えた（パッド使用）。動作が全体的にゆっくり。意欲低下（趣味の将棋をしなくなった、散歩も行かなくなった）。
+【ないもの】振戦なし、幻視なし、怒りっぽさなし（穏やかなまま）、頭痛なし、転倒は1ヶ月前に1回
+【既往】高血圧（内服中）、軽度の腰椎変形性関節症
+【この患者固有のルール】
+- 妻がメインで答える。本人は「うーん…そうだったかな」「…まあ、そうかもしれん」等ゆっくり答える
+- 三徴の順番を聞かれたら：歩行障害→認知機能低下→尿失禁の順
+- 「歩き方」「歩行」について具体的に聞かれたら：すり足、小刻み、ペタペタ、足が床に張り付く感じ
+- 認知症について聞かれたら：「ぼーっとしてる」「やる気がない」が中心。記銘力低下もある
+- 本人に直接聞くと返答が遅い（3-5秒かかる）。内容は概ね正しいが、妻が補足する`,
+  },
+  {
+    id: 'C-2',
+    chiefComplaint: '数日続く激しい頭痛・痙攣を起こした',
+    presentation: '32歳女性「1週間くらい前から頭痛がひどくて鎮痛剤が全然効かないんです。昨日、職場で急にけいれんを起こして倒れたらしくて…」',
+    difficulty: 3, maxScore: 6,
+    diagnosis: '脳静脈洞血栓症',
+    differentials: ['くも膜下出血','片頭痛重積','脳腫瘍','特発性頭蓋内圧亢進症'],
+    requiredTests: ['MRI','血液','脳波'],
+    examFindings: `【バイタルサイン】BP 135/85、HR 88、体温37.2℃
+【意識】清明だがやや傾眠傾向
+【瞳孔】正円同大、対光反射正常
+【眼底】うっ血乳頭あり（両側）→ 頭蓋内圧亢進を示唆
+【視野】左同名半盲の疑い
+【項部硬直】軽度あり
+【四肢筋力】右上下肢 4/5（左は正常）
+【腱反射】右やや亢進、バビンスキー 右陽性
+【感覚】概ね正常
+【痙攣】来院時はなし（昨日全身性強直間代性発作1回あり）`,
+    labResults: [
+      { triggers: ['MRI','MRV','画像','頭部'], result: '頭部MRI：左横静脈洞〜S状静脈洞にT1高信号・T2低信号 → 亜急性期血栓\nMRV：左横静脈洞の描出欠損（血栓による閉塞）\n左側頭葉〜頭頂葉に静脈性梗塞あり（出血性変化を伴う）\n→ 脳静脈洞血栓症（CVST）に合致' },
+      { triggers: ['血液','採血','血清','Dダイマー','D-dimer','凝固'], result: 'D-dimer 5.8 μg/mL（↑↑ 基準値 <0.5）\nPT-INR 正常、APTT 軽度延長\nプロテインS活性：42%（↓ 基準値 60-150%）→ プロテインS欠乏\n一般血液：WBC軽度上昇、Hb正常、PLT正常\nHCG陰性（非妊娠）\n→ 凝固異常がCVSTの原因として示唆される' },
+      { triggers: ['脳波','EEG'], result: '脳波：左半球に周期性鋭波放電あり\n背景活動は左で振幅低下\n→ 左半球の器質的障害を反映、痙攣の焦点と一致' },
+      { triggers: ['髄液','腰椎穿刺','ルンバール','CSF'], result: '髄液圧 280mmH2O（↑ 基準値 <200）\n細胞数 15/μL（軽度上昇）\n蛋白 68 mg/dL（軽度上昇）\n赤血球あり（出血性梗塞の影響）\n糖 正常\n→ 頭蓋内圧亢進を確認' },
+      { triggers: ['CT'], result: '頭部CT：左側頭葉〜頭頂葉に低吸収域あり、一部に高吸収域（出血性変化）\n→ 通常の動脈支配領域に一致しない分布（静脈性梗塞を示唆）' },
+    ],
+    patientProfile: `【基本情報】名前：高橋 美穂、32歳女性、出版社編集者、独身一人暮らし
+【性格】バリキャリで気が強い。「仕事が忙しくて」が口癖。頭痛を我慢して1週間働いていた。痙攣で初めて怖くなった。
+【患者の理解】もともと片頭痛持ちなので、またひどい片頭痛かと思っていた。
+【実際の症状】1週間前から頭痛（今までの片頭痛とは違う。じわじわ悪化、拍動性ではなく持続的な圧迫感）。嘔気あり。市販の鎮痛剤が効かない。朝起きた時と前かがみで悪化。昨日の午後、職場で急に意識を失って痙攣（同僚が目撃、5分くらい）。今朝から右手がやや動かしにくい。視界の左側が見えにくい気がする。
+【超重要】経口避妊薬（低用量ピル）を3年前から服用中 → 薬やホルモン剤について聞かれたら答える。自分からは言わない。
+【既往】片頭痛（10代から、月1-2回）。2年前にエコノミークラス症候群で右ふくらはぎが腫れた（DVT疑い、精査せず放置）→ 「足が腫れたことは？」「血栓は？」等と聞かれたら答える。
+【ないもの】明らかな発熱なし（微熱程度）、外傷なし、手術歴なし
+【この患者固有のルール】
+- ピルの服用は「薬は飲んでますか？」「ホルモン剤は？」等と聞かれて初めて答える
+- DVTエピソードは「血栓」「足が腫れた」等の話題で聞かれたら答える
+- 頭痛が「いつもの片頭痛とは全然違う」ことを強調（「こんなのは初めてです」）
+- 痙攣については同僚から聞いた話として答える（本人は覚えていない）`,
+  },
+];
+
+/* ============================================================
+   API CALL
+   ============================================================ */
+const callClaude = async (systemPrompt, messages) => {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 300,
+      system: systemPrompt,
+      messages,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API Error ${res.status}`);
+  }
+  const data = await res.json();
+  return data.content[0].text;
+};
+
+/* ============================================================
+   GAME MASTER LOGIC
+   ============================================================ */
+const EXAM_KW = ['診察','身体所見','フィジカル','バイタル','神経診察','理学所見','触診','聴診','打診','視診','眼底'];
+const LAB_KW = ['検査','オーダー','CT','MRI','MRV','CK','抗体','髄液','筋電図','EMG','血液','MIBG','DAT','神経伝導','脳波','骨盤','卵巣','反復刺激','採血','腰椎穿刺','ルンバール','SPECT','心筋シンチ','画像','エコー','超音波','脳脊髄液','CSF','EEG','NCS','電気生理','婦人科','腹部','VEP','誘発電位','タップテスト','Dダイマー','凝固'];
+
+function isExamRequest(msg) { return EXAM_KW.some(k => msg.includes(k)); }
+function isLabRequest(msg) { return LAB_KW.some(k => msg.includes(k)); }
+
+function getLabResults(scenario, msg) {
+  const msgL = msg.toLowerCase();
+  const matched = [];
+  for (const lab of scenario.labResults) {
+    if (lab.triggers.some(t => msg.includes(t) || msgL.includes(t.toLowerCase()))) {
+      matched.push(lab.result);
+    }
+  }
+  if (matched.length === 0) {
+    const generic = ['検査','オーダー','血液','採血'];
+    if (generic.some(g => msg.includes(g))) {
+      const blood = scenario.labResults.find(l => l.triggers.some(t => ['血液','採血','血清','抗体'].includes(t)));
+      if (blood) matched.push(blood.result);
+    }
+  }
+  if (matched.length === 0) {
+    return '該当する検査結果はありません。\n具体的な検査名を指定してください（例：血液検査、MRI、髄液検査、神経伝導検査 等）';
+  }
+  return matched.join('\n\n');
+}
+
+/* ============================================================
+   SCORING（正解3pt + 必要検査 各1pt）
+   ============================================================ */
+const TEST_SYNONYMS = {
+  '髄液': ['髄液','腰椎穿刺','ルンバール','CSF','タップテスト','脳脊髄液'],
+  'MRI': ['MRI','MRV'],
+  '筋電図': ['筋電図','EMG','電気生理'],
+  '血液': ['血液','採血','Dダイマー','凝固'],
+  '抗体': ['抗体','自己抗体'],
+  'CT': ['CT'],
+  '反復刺激': ['反復刺激'],
+  'DAT': ['DAT','SPECT','ダット','ドパミン'],
+  '骨盤': ['骨盤','卵巣','婦人科'],
+  '神経伝導': ['神経伝導','NCS'],
+  '脳波': ['脳波','EEG'],
+  '誘発電位': ['誘発電位','VEP'],
+};
+
+const calculateScore = (scenario, diagnosis, testsOrdered) => {
+  let score = 0;
+  const feedback = [];
+  const dL = diagnosis.toLowerCase();
+
+  const correct =
+    (scenario.diagnosis === '重症筋無力症' && (dL.includes('筋無力') || dL.includes('mg') || dL.includes('myasthenia'))) ||
+    (scenario.diagnosis === 'パーキンソン病' && (dL.includes('パーキンソン') || dL.includes('parkinson'))) ||
+    (scenario.diagnosis === 'Guillain-Barré症候群' && (dL.includes('guillain') || dL.includes('gbs') || dL.includes('ギラン') || dL.includes('ギランバレー'))) ||
+    (scenario.diagnosis === '抗NMDA受容体脳炎' && (dL.includes('nmda') || dL.includes('抗nmda') || dL.includes('脳炎'))) ||
+    (scenario.diagnosis === '多発性硬化症' && (dL.includes('多発性硬化') || dL.includes('ms') || dL.includes('multiple sclerosis'))) ||
+    (scenario.diagnosis === '筋萎縮性側索硬化症' && (dL.includes('als') || dL.includes('筋萎縮性側索') || dL.includes('amyotrophic'))) ||
+    (scenario.diagnosis === '特発性正常圧水頭症' && (dL.includes('正常圧水頭') || dL.includes('nph') || dL.includes('水頭症'))) ||
+    (scenario.diagnosis === '脳静脈洞血栓症' && (dL.includes('静脈洞血栓') || dL.includes('cvst') || dL.includes('静脈血栓')));
+
+  if (correct) { score += 3; feedback.push({ ok: true, text: '正解診断 +3' }); }
+  else { feedback.push({ ok: false, text: `正解は「${scenario.diagnosis}」` }); }
+
+  scenario.requiredTests.forEach(t => {
+    const synonyms = TEST_SYNONYMS[t] || [t];
+    const matched = testsOrdered.some(o => {
+      const ol = o.toLowerCase();
+      return synonyms.some(s => ol.includes(s.toLowerCase()));
+    });
+    if (matched) { score += 1; feedback.push({ ok: true, text: `検査: ${t} +1` }); }
+    else { feedback.push({ ok: false, text: `未検査: ${t}` }); }
+  });
+
+  return { score, maxScore: scenario.maxScore, feedback, isCorrect: correct };
+};
+
+/* ============================================================
+   QR CODE COMPONENT
+   ============================================================ */
+function QRCodeDisplay() {
+  const ref = useRef(null);
+  const [url, setUrl] = useState('');
+
+  useEffect(() => {
+    const currentUrl = window.location.href;
+    setUrl(currentUrl);
+    if (!ref.current || typeof window.qrcode !== 'function') return;
+    try {
+      const qr = window.qrcode(0, 'M');
+      qr.addData(currentUrl);
+      qr.make();
+      const count = qr.getModuleCount();
+      const cell = 3;
+      const margin = 8;
+      const size = count * cell + margin * 2;
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+      svg += `<rect width="${size}" height="${size}" fill="#1e293b" rx="6"/>`;
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          if (qr.isDark(r, c)) {
+            svg += `<rect x="${c * cell + margin}" y="${r * cell + margin}" width="${cell}" height="${cell}" fill="#e2e8f0"/>`;
+          }
+        }
+      }
+      svg += '</svg>';
+      ref.current.innerHTML = svg;
+    } catch (e) { /* QR generation failed, just hide */ }
+  }, []);
+
+  return (
+    <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>QRコードでアクセス</div>
+      <div ref={ref} style={{ display: 'flex', justifyContent: 'center' }} />
+      {url.startsWith('http') && (
+        <div style={{ fontSize: 10, color: '#475569', marginTop: 6, wordBreak: 'break-all', maxWidth: 300, margin: '6px auto 0' }}>{url}</div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+
+function MenuScreen({ onStart, onRandom }) {
+  return (
+    <div className="screen">
+      <div className="title" style={{ marginBottom: 2 }}>Everybody Lies</div>
+      <div className="subtitle" style={{ marginBottom: 24 }}>神経内科問診トレーニング（AI患者版）</div>
+
+      <div className="card" style={{ marginBottom: 16, padding: 16 }}>
+        <div style={{ color: '#60a5fa', fontWeight: 700, marginBottom: 8, fontSize: 13 }}>HOW TO PLAY</div>
+        <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.8 }}>
+          AIが患者役を演じます。自由に問診して情報を引き出してください。<br />
+          「診察」と入力 → 身体所見、「〇〇検査」→ 検査結果をGMが提示。<br />
+          <span style={{ color: '#f87171', fontWeight: 700 }}>"Done it."</span> と入力して診断を提出。
+        </div>
+      </div>
+
+      <button className="btn btn-red glow" style={{ width: '100%', maxWidth: 480, marginBottom: 16, padding: '14px 20px', fontSize: 16 }} onClick={onRandom}>
+        &#x1f3b2; ランダム開始
+      </button>
+
+      <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {scenarios.map(s => (
+          <button key={s.id} className="scenario-btn" onClick={() => onStart(s.id)}>
+            <span style={{ color: '#60a5fa', fontWeight: 700, fontFamily: 'monospace', flexShrink: 0 }}>{s.id}</span>
+            <span style={{ flex: 1, fontSize: 13, lineHeight: 1.4 }}>{s.chiefComplaint}</span>
+            <span className="stars" style={{ flexShrink: 0 }}>{'★'.repeat(s.difficulty)}</span>
+          </button>
+        ))}
+      </div>
+
+      <QRCodeDisplay />
+    </div>
+  );
+}
+
+function DiagScreen({ onSubmit, onBack, onMenu, draft, setDraft }) {
+  return (
+    <div className="screen">
+      <div className="card slide-up">
+        <h2 style={{ textAlign: 'center', color: '#facc15', fontSize: 24, fontWeight: 800, marginBottom: 20 }}>"Done it."</h2>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>最終診断</label>
+          <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="例: 重症筋無力症" autoFocus />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-green" style={{ flex: 1 }} onClick={() => onSubmit(draft)} disabled={!draft.trim()}>提出</button>
+          <button className="btn btn-gray" onClick={onBack}>問診に戻る</button>
+        </div>
+        <button className="nav-btn" onClick={onMenu} style={{ display: 'block', margin: '12px auto 0', color: '#64748b' }}>メニューに戻る</button>
+      </div>
+    </div>
+  );
+}
+
+function ResultScreen({ result, scenario, onNext, onMenu }) {
+  const pct = Math.round((result.score / result.maxScore) * 100);
+  const barColor = pct >= 70 ? '#22c55e' : pct >= 40 ? '#eab308' : '#ef4444';
+  return (
+    <div className="screen">
+      <div className="card slide-up" style={{ textAlign: 'center' }}>
+        <h2 style={{ color: result.isCorrect ? '#4ade80' : '#f87171', fontSize: 20, fontWeight: 800, marginBottom: 16 }}>
+          {result.isCorrect ? '"Patient is saved."' : '"Interesting theory."'}
+        </h2>
+        <div className="score-reveal" style={{ marginBottom: 4 }}>
+          <span style={{ fontSize: 56, fontWeight: 800 }}>{result.score}</span>
+          <span style={{ fontSize: 20, color: '#64748b' }}>/{result.maxScore}</span>
+        </div>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+          {pct}% &middot; {result.qCount}回の問診
+        </div>
+        <div className="score-bar-bg" style={{ marginBottom: 20 }}>
+          <div className="score-bar-fill bar-fill" style={{ width: `${pct}%`, background: barColor }} />
+        </div>
+
+        <div style={{ background: '#0f172a', borderRadius: 8, padding: 12, marginBottom: 12, textAlign: 'left' }}>
+          {result.feedback.map((f, i) => (
+            <div key={i} style={{ color: f.ok ? '#4ade80' : '#f87171', fontSize: 13, padding: '3px 0' }}>
+              {f.ok ? '✓' : '✗'} {f.text}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#93c5fd', marginBottom: 8 }}>{scenario.diagnosis}</div>
+
+        <div style={{ background: '#0f172a', borderRadius: 8, padding: 10, marginBottom: 20, textAlign: 'left' }}>
+          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>鑑別として考えるべき疾患:</div>
+          <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>{scenario.differentials.join('、')}</div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-blue" style={{ flex: 1 }} onClick={onNext}>次のケース</button>
+          <button className="btn btn-gray" style={{ flex: 1 }} onClick={onMenu}>メニュー</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlayScreen({ scenario, onDone, onMenu }) {
+  const [msgs, setMsgs] = useState([
+    { type: 'system', text: `【${scenario.id}】${'★'.repeat(scenario.difficulty)}  満点${scenario.maxScore}点\n問診 →「診察」で身体所見 →「○○検査」で検査結果 → "Done it." で診断提出` },
+    { type: 'patient', text: scenario.presentation },
+  ]);
+  const [history, setHistory] = useState([]);
+  const [input, setInput] = useState('');
+  const [tests, setTests] = useState([]);
+  const [qCount, setQCount] = useState(0);
+  const [examDone, setExamDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Mutable game state for send() closure (avoids stale reads)
+  const gs = useRef({ examDone: false, hints: {}, prc: 0, tests: [], qCount: 0 });
+
+  const fullSystemPrompt = COMMON_SYSTEM_PROMPT + scenario.patientProfile;
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+  useEffect(() => { if (!loading) inputRef.current?.focus(); }, [loading, msgs]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const msg = input.trim();
+    setInput('');
+
+    if (msg.toLowerCase().includes('done it')) {
+      setMsgs(p => [...p, { type: 'user', text: msg }]);
+      setTimeout(() => onDone(gs.current.qCount, gs.current.tests), 300);
+      return;
+    }
+
+    gs.current.qCount++;
+    setQCount(gs.current.qCount);
+    setMsgs(p => [...p, { type: 'user', text: msg }]);
+
+    const examReq = isExamRequest(msg);
+    const labReq = !examReq && isLabRequest(msg);
+
+    if (examReq) {
+      gs.current.examDone = true;
+      setExamDone(true);
+      const add = [{ type: 'exam', text: scenario.examFindings }];
+      if (!gs.current.hints.lab) {
+        gs.current.hints.lab = true;
+        add.push({ type: 'gm', text: '検査をオーダーできます。具体的な検査名を入力してください。\n（例：血液検査、MRI、髄液検査、神経伝導検査 等）' });
+      }
+      setMsgs(p => [...p, ...add]);
+      setHistory(h => [...h, { role: 'user', content: msg }, { role: 'assistant', content: 'はい、お願いします。' }]);
+      return;
+    }
+
+    if (labReq) {
+      gs.current.tests = [...gs.current.tests, msg];
+      setTests(gs.current.tests);
+      const labText = getLabResults(scenario, msg);
+      const add = [{ type: 'lab', text: labText }];
+      if (gs.current.tests.length >= 2 && !gs.current.hints.done) {
+        gs.current.hints.done = true;
+        add.push({ type: 'gm', text: '診断の準備ができたら "Done it." と入力してください。\n追加の問診・検査も可能です。' });
+      }
+      setMsgs(p => [...p, ...add]);
+      setHistory(h => [...h, { role: 'user', content: msg }, { role: 'assistant', content: 'はい、お願いします。' }]);
+      return;
+    }
+
+    // AI patient response
+    setLoading(true);
+    try {
+      const newH = [...history, { role: 'user', content: msg }];
+      const res = await callClaude(fullSystemPrompt, newH);
+      setHistory([...newH, { role: 'assistant', content: res }]);
+      gs.current.prc++;
+      const add = [{ type: 'patient', text: res }];
+      if (gs.current.prc >= 4 && !gs.current.examDone && !gs.current.hints.exam) {
+        gs.current.hints.exam = true;
+        add.push({ type: 'gm', text: '身体診察も行えます。「診察」「身体所見」等と入力してください。' });
+      }
+      setMsgs(p => [...p, ...add]);
+    } catch (e) {
+      setMsgs(p => [...p, { type: 'error', text: e.message }]);
+    }
+    setLoading(false);
+  };
+
+  const labelMap = {
+    patient: ['🏥','患者','#94a3b8'],
+    exam: ['📋','身体所見（GM）','#4ade80'],
+    lab: ['🔬','検査結果（GM）','#facc15'],
+    gm: ['💡','GM','#c084fc'],
+    error: ['⚠','エラー','#f87171'],
+  };
+
+  return (
+    <div className="chat-wrap">
+      <div className="chat-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={onMenu} className="nav-btn" style={{ color: '#94a3b8', padding: '4px 0' }}>← メニュー</button>
+          <span style={{ color: '#334155' }}>|</span>
+          <span style={{ color: '#60a5fa', fontFamily: 'monospace', fontSize: 13 }}>{scenario.id}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#64748b' }}>
+          {examDone && <span style={{ color: '#4ade80', fontSize: 11 }}>診察✓</span>}
+          <span>Q:{qCount}</span>
+          <span>T:{tests.length}</span>
+        </div>
+      </div>
+
+      <div className="chat-body">
+        {msgs.map((m, i) => {
+          const label = labelMap[m.type];
+          if (m.type === 'gm') {
+            return <div key={i} className="msg msg-gm fade-in">{label[0]} {m.text}</div>;
+          }
+          return (
+            <div key={i} className={`msg msg-${m.type}`}>
+              {label && <div className="msg-label" style={{ color: label[2] }}>{label[0]} {label[1]}</div>}
+              {m.text}
+            </div>
+          );
+        })}
+        {loading && (
+          <div className="msg msg-patient">
+            <div className="msg-label" style={{ color: '#94a3b8' }}>🏥 患者</div>
+            <span style={{ color: '#94a3b8' }}>考え中<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span></span>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <div className="chat-footer">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.isComposing && !e.nativeEvent.isComposing) send(); }}
+            placeholder={'問診を入力…（"Done it." で診断提出）'}
+            disabled={loading}
+            style={{ flex: 1 }}
+          />
+          <button className="btn btn-blue btn-sm" onClick={send} disabled={loading}>送信</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   MAIN APP
+   ============================================================ */
+function App() {
+  const [view, setView] = useState('menu');
+  const [scenario, setScenario] = useState(null);
+  const [gameId, setGameId] = useState(0);
+  const [playData, setPlayData] = useState({ qCount: 0, tests: [] });
+  const [result, setResult] = useState(null);
+  const [diagDraft, setDiagDraft] = useState('');
+
+  const startGame = (id = null) => {
+    const s = id ? scenarios.find(x => x.id === id) : scenarios[Math.floor(Math.random() * scenarios.length)];
+    setScenario(s);
+    setResult(null);
+    setDiagDraft('');
+    setGameId(g => g + 1);
+    setView('play');
+  };
+
+  if (view === 'menu') return <MenuScreen onStart={startGame} onRandom={() => startGame()} />;
+
+  if (view === 'result') {
+    return <ResultScreen result={result} scenario={scenario} onNext={() => startGame()} onMenu={() => setView('menu')} />;
+  }
+
+  // play or diag: PlayScreen stays mounted, DiagScreen overlays
+  return (
+    <div style={{ height: '100%' }}>
+      <PlayScreen
+        key={scenario.id + '-' + gameId}
+        scenario={scenario}
+        onDone={(qCount, tests) => { setPlayData({ qCount, tests }); setDiagDraft(''); setView('diag'); }}
+        onMenu={() => setView('menu')}
+      />
+      {view === 'diag' && (
+        <div className="overlay">
+          <DiagScreen
+            draft={diagDraft}
+            setDraft={setDiagDraft}
+            onSubmit={(diag) => {
+              setResult({ ...calculateScore(scenario, diag, playData.tests), qCount: playData.qCount });
+              setView('result');
+            }}
+            onBack={() => setView('play')}
+            onMenu={() => setView('menu')}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
