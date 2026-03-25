@@ -116,6 +116,23 @@
     .dual-scores { display: flex; gap: 16px; justify-content: center; }
     .dual-scores .score-circle { width: 120px; height: 120px; }
     .dual-scores .score-value { font-size: 36px; }
+    .menu-card {
+      background: var(--mg-surface); border-radius: var(--radius-card);
+      padding: 20px; margin-bottom: 12px; cursor: pointer;
+      box-shadow: var(--shadow-card);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 0.15s;
+    }
+    .menu-card:active { transform: scale(0.98); }
+    .menu-card-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .menu-card-desc { font-size: 14px; color: var(--mg-text-grey); }
+    .menu-card-badge {
+      display: inline-block; font-size: 12px; padding: 2px 8px;
+      border-radius: 6px; margin-top: 8px; font-weight: 600;
+    }
+    .menu-card-badge.done { background: rgba(74,155,63,0.1); color: var(--mg-primary); }
+    .menu-card-badge.pending { background: rgba(99,102,106,0.1); color: var(--mg-text-grey); }
     .slide-container { position: relative; overflow: hidden; }
     .slide-left-enter { animation: slideLeftIn 0.3s ease-out; }
     .slide-right-enter { animation: slideRightIn 0.3s ease-out; }
@@ -130,6 +147,7 @@
   <div id="slide-container" class="slide-container"></div>
   <div id="adl-result" class="screen"></div>
   <div id="mgc-result" class="screen"></div>
+  <div id="mgqol-result" class="screen"></div>
   <div id="final-result" class="screen"></div>
   <div id="qr-container" class="qr-container">
     <canvas id="qr-canvas" width="200" height="200"></canvas>
@@ -175,18 +193,45 @@
         { adl: 1, mgc: 4 },
         { adl: 2, mgc: 5 },
         { adl: 3, mgc: 6 }
-      ]
+      ],
+      mgqol: {
+        title: 'MG-QOL15',
+        maxScore: 30,
+        items: [
+          { name: 'MGの病状に不満である', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため物を見る際に支障が生じる', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため食べる際に支障が生じる', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため社会活動に制限が生じている', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため趣味や娯楽を以前ほど楽しめない', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため家族の要求に十分応えられない', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため行動に工夫が必要', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため仕事や役割（家庭を含む）に制限が生じ悩まされている', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため話す際に支障が生じる', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため外出、用足しをひとりですることが難しい', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため気持ちが落ち込む', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため歩行に支障が生じる', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため周囲と同じ早さで行動出来ない', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGでつらくて精神的に押し潰されそうになる', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] },
+          { name: 'MGのため身支度に支障が生じる', options: ['全くそう思わない', '少しそう思う', '強くそう思う'], values: [0,1,2] }
+        ]
+      }
     };
 
     const state = {
-      phase: 'adl',
+      phase: 'menu',
       index: 0,
       adlScores: Array(8).fill(-1),
       mgcScores: Array(10).fill(-1),
+      mgqolScores: Array(15).fill(-1),
     };
 
     function currentScale() { return DATA[state.phase]; }
-    function currentScores() { return state.phase === 'adl' ? state.adlScores : state.mgcScores; }
+    function currentScores() {
+      if (state.phase === 'adl') return state.adlScores;
+      if (state.phase === 'mgc') return state.mgcScores;
+      if (state.phase === 'mgqol') return state.mgqolScores;
+      return [];
+    }
     function totalItems() { return currentScale().items.length; }
     function scrollTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
@@ -233,7 +278,7 @@
     }
 
     function hideAllResults() {
-      ['adl-result', 'mgc-result', 'final-result'].forEach(function(id) {
+      ['adl-result', 'mgc-result', 'mgqol-result', 'final-result'].forEach(function(id) {
         document.getElementById(id).className = 'screen';
       });
     }
@@ -276,12 +321,14 @@
         renderResultScreen('adl');
       } else if (state.phase === 'mgc') {
         renderResultScreen('mgc');
+      } else if (state.phase === 'mgqol') {
+        renderResultScreen('mgqol');
       }
     }
 
     function calcTotal(phase) {
       var scale = DATA[phase];
-      var scores = phase === 'adl' ? state.adlScores : state.mgcScores;
+      var scores = phase === 'adl' ? state.adlScores : (phase === 'mgc' ? state.mgcScores : state.mgqolScores);
       return scores.reduce(function(sum, sel, i) {
         return sum + (sel >= 0 ? scale.items[i].values[sel] : 0);
       }, 0);
@@ -295,7 +342,7 @@
 
     function renderResultScreen(phase) {
       var scale = DATA[phase];
-      var scores = phase === 'adl' ? state.adlScores : state.mgcScores;
+      var scores = phase === 'adl' ? state.adlScores : (phase === 'mgc' ? state.mgcScores : state.mgqolScores);
       var total = calcTotal(phase);
       var el = document.getElementById(phase + '-result');
 
@@ -312,15 +359,15 @@
       });
       html += '</div>';
 
-      if (phase === 'adl') {
-        html += '<button class="btn btn-primary" onclick="startMgc()">MGCに進む →</button>';
-        html += '<div class="btn-row"><button class="btn btn-secondary" onclick="copyResult(\'adl\')">コピー</button><button class="btn btn-secondary" onclick="toggleQR(\'adl\')">QRコード</button></div>';
-        html += '<button class="btn btn-ghost" onclick="resetAdl()">やり直す</button>';
-      } else {
-        html += '<button class="btn btn-primary" onclick="showFinal()">最終結果を見る</button>';
-        html += '<div class="btn-row"><button class="btn btn-secondary" onclick="copyResult(\'mgc\')">コピー</button><button class="btn btn-secondary" onclick="toggleQR(\'mgc\')">QRコード</button></div>';
-        html += '<button class="btn btn-ghost" onclick="resetMgc()">やり直す</button>';
+      // Buttons
+      html += '<button class="btn btn-primary" onclick="renderMenu()">スケール選択に戻る</button>';
+      var adlDone = state.adlScores[0] >= 0;
+      var mgcDone = state.mgcScores[0] >= 0;
+      if (adlDone && mgcDone) {
+        html += '<button class="btn btn-secondary" style="margin-top:10px;" onclick="showFinal()">最終結果を見る</button>';
       }
+      html += '<div class="btn-row"><button class="btn btn-secondary" onclick="copyResult(\'' + phase + '\')">コピー</button><button class="btn btn-secondary" onclick="toggleQR(\'' + phase + '\')">QRコード</button></div>';
+      html += '<button class="btn btn-ghost" onclick="resetScale(\'' + phase + '\')">やり直す</button>';
 
       el.innerHTML = html;
       el.className = 'screen active';
@@ -332,11 +379,16 @@
       scrollTop();
       var adlTotal = calcTotal('adl');
       var mgcTotal = calcTotal('mgc');
+      var mgqolDone = state.mgqolScores[0] >= 0;
       var el = document.getElementById('final-result');
 
       var html = '<div class="dual-scores">';
       html += '<div><div class="score-circle"><div class="score-value">' + adlTotal + '</div><div class="score-max">/ ' + DATA.adl.maxScore + '点</div></div><div class="score-label">MG-ADL</div></div>';
       html += '<div><div class="score-circle"><div class="score-value">' + mgcTotal + '</div><div class="score-max">/ ' + DATA.mgc.maxScore + '点</div></div><div class="score-label">MGC</div></div>';
+      if (mgqolDone) {
+        var mgqolTotal = calcTotal('mgqol');
+        html += '<div><div class="score-circle"><div class="score-value">' + mgqolTotal + '</div><div class="score-max">/ ' + DATA.mgqol.maxScore + '点</div></div><div class="score-label">QOL15</div></div>';
+      }
       html += '</div>';
 
       html += '<div class="item-summary">';
@@ -352,8 +404,17 @@
         var val = sel >= 0 ? item.values[sel] : 0;
         html += '<div class="item-row"><span class="item-name">' + item.name + '</span><span class="item-score ' + scoreColorClass('mgc', val) + '">' + val + '点</span></div>';
       });
+      if (mgqolDone) {
+        html += '<div style="font-weight:700;margin:12px 0 8px;padding-top:8px;border-top:1px solid var(--mg-divider);">MG-QOL15</div>';
+        DATA.mgqol.items.forEach(function(item, i) {
+          var sel = state.mgqolScores[i];
+          var val = sel >= 0 ? item.values[sel] : 0;
+          html += '<div class="item-row"><span class="item-name">' + item.name + '</span><span class="item-score ' + scoreColorClass('mgqol', val) + '">' + val + '点</span></div>';
+        });
+      }
       html += '</div>';
 
+      html += '<button class="btn btn-primary" onclick="renderMenu()">スケール選択に戻る</button>';
       html += '<div class="btn-row"><button class="btn btn-secondary" onclick="copyResult(\'final\')">コピー</button><button class="btn btn-secondary" onclick="toggleQR(\'final\')">QRコード</button></div>';
       html += '<button class="btn btn-ghost" onclick="resetAll()">最初からやり直す</button>';
 
@@ -368,30 +429,73 @@
       });
     }
 
-    function startMgc() {
-      hideAllResults();
-      state.phase = 'mgc';
-      state.index = 0;
-      applyAdlToMgcMapping();
-      scrollTop();
-      renderQuestion();
-    }
-
-    function resetAdl() {
-      state.phase = 'adl';
-      state.index = 0;
-      state.adlScores.fill(-1);
+    function renderMenu() {
+      state.phase = 'menu';
+      document.getElementById('slide-container').innerHTML = '';
+      document.getElementById('progress-bar').innerHTML = '';
+      document.getElementById('progress-counter').textContent = '';
       hideAllResults();
       document.getElementById('qr-container').classList.remove('visible');
       scrollTop();
+
+      var container = document.getElementById('slide-container');
+      var adlDone = state.adlScores[0] >= 0;
+      var mgcDone = state.mgcScores[0] >= 0;
+      var mgqolDone = state.mgqolScores[0] >= 0;
+
+      var html = '<div class="screen active">';
+      html += '<div class="question-title" style="margin-bottom:20px;">スケール選択</div>';
+
+      // ADL card
+      html += '<div class="menu-card" onclick="startScale(\'adl\')">';
+      html += '<div class="menu-card-title">MG-ADL</div>';
+      html += '<div class="menu-card-desc">日常生活動作 — 8項目 / 24点</div>';
+      if (adlDone) html += '<div class="menu-card-badge done">完了 ' + calcTotal('adl') + '/' + DATA.adl.maxScore + '点</div>';
+      else html += '<div class="menu-card-badge pending">未実施</div>';
+      html += '</div>';
+
+      // MGC card
+      html += '<div class="menu-card" onclick="startScale(\'mgc\')">';
+      html += '<div class="menu-card-title">MG Composite</div>';
+      html += '<div class="menu-card-desc">重症度評価 — 10項目 / 50点';
+      if (adlDone) html += '（ADL連携あり）';
+      html += '</div>';
+      if (mgcDone) html += '<div class="menu-card-badge done">完了 ' + calcTotal('mgc') + '/' + DATA.mgc.maxScore + '点</div>';
+      else html += '<div class="menu-card-badge pending">未実施</div>';
+      html += '</div>';
+
+      // QOL card
+      html += '<div class="menu-card" onclick="startScale(\'mgqol\')">';
+      html += '<div class="menu-card-title">MG-QOL15</div>';
+      html += '<div class="menu-card-desc">QOL評価 — 15項目 / 30点</div>';
+      if (mgqolDone) html += '<div class="menu-card-badge done">完了 ' + calcTotal('mgqol') + '/' + DATA.mgqol.maxScore + '点</div>';
+      else html += '<div class="menu-card-badge pending">未実施</div>';
+      html += '</div>';
+
+      // Final result button (only if ADL+MGC done)
+      if (adlDone && mgcDone) {
+        html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="showFinal()">最終結果を見る</button>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function startScale(scale) {
+      state.phase = scale;
+      state.index = 0;
+      if (scale === 'mgc') applyAdlToMgcMapping();
+      scrollTop();
       renderQuestion();
     }
 
-    function resetMgc() {
-      state.phase = 'mgc';
+    function resetScale(scale) {
+      if (scale === 'adl') state.adlScores.fill(-1);
+      else if (scale === 'mgc') state.mgcScores.fill(-1);
+      else if (scale === 'mgqol') state.mgqolScores.fill(-1);
+      state.phase = scale;
       state.index = 0;
-      state.mgcScores.fill(-1);
-      applyAdlToMgcMapping();
+      if (scale === 'mgc') applyAdlToMgcMapping();
       hideAllResults();
       document.getElementById('qr-container').classList.remove('visible');
       scrollTop();
@@ -399,14 +503,15 @@
     }
 
     function resetAll() {
-      state.phase = 'adl';
+      state.phase = 'menu';
       state.index = 0;
       state.adlScores.fill(-1);
       state.mgcScores.fill(-1);
+      state.mgqolScores.fill(-1);
       hideAllResults();
       document.getElementById('qr-container').classList.remove('visible');
       scrollTop();
-      renderQuestion();
+      renderMenu();
     }
 
     // --- Text Generation + Copy ---
@@ -419,6 +524,10 @@
         text += generateScaleText('adl', false);
         text += '\n\n';
         text += generateScaleText('mgc', false);
+        if (state.mgqolScores[0] >= 0) {
+          text += '\n\n';
+          text += generateScaleText('mgqol', false);
+        }
         return text;
       }
       return generateScaleText(phase, true);
@@ -426,16 +535,17 @@
 
     function generateScaleText(phase, includeHeader) {
       var scale = DATA[phase];
-      var scores = phase === 'adl' ? state.adlScores : state.mgcScores;
+      var scores = phase === 'adl' ? state.adlScores : (phase === 'mgc' ? state.mgcScores : state.mgqolScores);
       var total = calcTotal(phase);
       var text = '';
       if (includeHeader !== false) {
-        var title = phase === 'adl' ? 'MG-ADLスケール結果' : 'MG Composite Scale結果';
-        text += title + '\n';
+        var titleMap = { adl: 'MG-ADLスケール結果', mgc: 'MG Composite Scale結果', mgqol: 'MG-QOL15結果' };
+        text += titleMap[phase] + '\n';
         text += '日付: ' + new Date().toLocaleDateString('ja-JP') + '\n';
         text += '------------------------\n';
       } else {
-        text += (phase === 'adl' ? '【MG-ADL スケール】' : '【MG Composite Scale】') + '\n';
+        var labelMap = { adl: '【MG-ADL スケール】', mgc: '【MG Composite Scale】', mgqol: '【MG-QOL15】' };
+        text += labelMap[phase] + '\n';
         text += '合計点: ' + total + '/' + scale.maxScore + '点\n\n';
       }
       scale.items.forEach(function(item, i) {
@@ -533,7 +643,7 @@
 
     // --- Init ---
     document.addEventListener('DOMContentLoaded', function() {
-      renderQuestion();
+      renderMenu();
     });
   </script>
 </body>
