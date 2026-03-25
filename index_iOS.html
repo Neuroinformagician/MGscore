@@ -503,7 +503,7 @@
       }
       var text = generateResultText(phase);
       var qr = qrcode(0, 'L');
-      qr.addData(text);
+      qr.addData(unescape(encodeURIComponent(text)), 'Byte');
       qr.make();
 
       var canvas = document.getElementById('qr-canvas');
